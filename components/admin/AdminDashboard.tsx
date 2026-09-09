@@ -159,18 +159,32 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
   async function handleCreateBadge(e: React.FormEvent) {
     e.preventDefault();
+    
+    // Validation
+    if (!newBadge.name.trim() || !newBadge.code.trim()) {
+      alert('Name and Code are required.');
+      return;
+    }
+    
+    if (!newBadge.detectorType || !newBadge.detectorValue.trim()) {
+      alert('Detector Type and Value are required.');
+      return;
+    }
+    
     try {
       await createBadge({
-        name: newBadge.name,
-        code: newBadge.code,
-        description: newBadge.description,
+        name: newBadge.name.trim(),
+        code: newBadge.code.trim(),
+        description: newBadge.description.trim(),
         rarity: newBadge.rarity,
         epValue: newBadge.epValue,
         detectorType: newBadge.detectorType,
-        detectorValue: newBadge.detectorValue || "",
+        detectorValue: newBadge.detectorValue.trim(),
       });
-      alert(`✅ Badge "${newBadge.name}" created.`);
-      setShowCreateBadge(false);
+      
+      alert(`✅ Badge "${newBadge.name}" created successfully!`);
+      
+      // Reset form
       setNewBadge({
         name: '',
         code: '',
@@ -180,9 +194,12 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         detectorType: 'exact',
         detectorValue: '',
       });
+      setShowCreateBadge(false);
+      
+      // Reload badges
       await loadBadges();
-    } catch (err: any) {
-      alert(`❌ Error: ${err.message}`);
+    } catch (e: any) {
+      alert(`❌ Error: ${e.message}`);
     }
   }
 
