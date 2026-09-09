@@ -1,71 +1,275 @@
 @import "tailwindcss";
 
 :root {
-  --background: #000000;
-  --foreground: #4ade80;
+  --bg-void: #05070a;
+  --bg-panel: #0a0f14;
+  --bg-panel-hover: #0f151c;
+  
+  --text-primary: #e0f4ff;
+  --text-muted: #6b8699;
+  --text-dim: #3d4f5f;
+  
+  --accent-cyan: #22d3ee;
+  --accent-lime: #84cc16;
+  --accent-amber: #fbbf24;
+  
+  --rarity-trash: #4b5563;
+  --rarity-common: #94a3b8;
+  --rarity-uncommon: #84cc16;
+  --rarity-rare: #22d3ee;
+  --rarity-epic: #c084fc;
+  --rarity-anomaly: #ec4899;
+  --rarity-mythic: #fbbf24;
+  
+  --border-dim: rgba(255, 255, 255, 0.05);
+  --border-base: rgba(255, 255, 255, 0.1);
+  --border-bright: rgba(255, 255, 255, 0.2);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--bg-void);
+  --color-foreground: var(--text-primary);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
+* {
+  box-sizing: border-box;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: 'Courier New', monospace;
+  background: var(--bg-void);
+  color: var(--text-primary);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
-/* Glow effects */
-.glow-green {
-  text-shadow: 0 0 10px rgba(74, 222, 128, 0.8), 0 0 20px rgba(74, 222, 128, 0.5);
+/* Mono font for numbers and terminal elements */
+.font-mono {
+  font-family: var(--font-geist-mono), 'Courier New', monospace;
+  font-variant-numeric: tabular-nums;
 }
 
-.glow-blue {
-  text-shadow: 0 0 10px rgba(96, 165, 250, 0.8), 0 0 20px rgba(96, 165, 250, 0.5);
+/* Rarity color classes */
+.text-rarity-trash { color: var(--rarity-trash); }
+.text-rarity-common { color: var(--rarity-common); }
+.text-rarity-uncommon { color: var(--rarity-uncommon); }
+.text-rarity-rare { color: var(--rarity-rare); }
+.text-rarity-epic { color: var(--rarity-epic); }
+.text-rarity-anomaly { color: var(--rarity-anomaly); }
+.text-rarity-mythic { color: var(--rarity-mythic); }
+
+.border-rarity-trash { border-color: var(--rarity-trash); }
+.border-rarity-common { border-color: var(--rarity-common); }
+.border-rarity-uncommon { border-color: var(--rarity-uncommon); }
+.border-rarity-rare { border-color: var(--rarity-rare); }
+.border-rarity-epic { border-color: var(--rarity-epic); }
+.border-rarity-anomaly { border-color: var(--rarity-anomaly); }
+.border-rarity-mythic { border-color: var(--rarity-mythic); }
+
+.bg-rarity-trash { background-color: rgba(75, 85, 99, 0.1); }
+.bg-rarity-common { background-color: rgba(148, 163, 184, 0.1); }
+.bg-rarity-uncommon { background-color: rgba(132, 204, 22, 0.1); }
+.bg-rarity-rare { background-color: rgba(34, 211, 238, 0.1); }
+.bg-rarity-epic { background-color: rgba(192, 132, 252, 0.1); }
+.bg-rarity-anomaly { background-color: rgba(236, 72, 153, 0.1); }
+.bg-rarity-mythic { background-color: rgba(251, 191, 36, 0.1); }
+
+/* Glow effects for high rarities */
+.glow-rare {
+  text-shadow: 0 0 20px rgba(34, 211, 238, 0.6);
 }
 
-.glow-yellow {
-  text-shadow: 0 0 10px rgba(250, 204, 21, 0.8), 0 0 20px rgba(250, 204, 21, 0.5);
+.glow-epic {
+  text-shadow: 0 0 24px rgba(192, 132, 252, 0.7);
 }
 
-.glow-pink {
-  text-shadow: 0 0 10px rgba(244, 114, 182, 0.8), 0 0 20px rgba(244, 114, 182, 0.5);
+.glow-anomaly {
+  text-shadow: 0 0 28px rgba(236, 72, 153, 0.8);
 }
 
-.glow-purple {
-  text-shadow: 0 0 10px rgba(192, 132, 252, 0.8), 0 0 20px rgba(192, 132, 252, 0.5);
+.glow-mythic {
+  text-shadow: 0 0 32px rgba(251, 191, 36, 0.9);
+  animation: mythic-pulse 2s ease-in-out infinite;
 }
 
-/* Scanline animation */
-@keyframes scanline {
+@keyframes mythic-pulse {
+  0%, 100% { 
+    text-shadow: 0 0 32px rgba(251, 191, 36, 0.9),
+                 0 0 64px rgba(251, 191, 36, 0.4);
+  }
+  50% { 
+    text-shadow: 0 0 40px rgba(251, 191, 36, 1),
+                 0 0 80px rgba(251, 191, 36, 0.6);
+  }
+}
+
+/* Subtle scanline effect - optional, tasteful */
+.scanlines {
+  position: relative;
+}
+
+.scanlines::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(255, 255, 255, 0.02) 0px,
+    transparent 1px,
+    transparent 2px,
+    rgba(255, 255, 255, 0.02) 3px
+  );
+  pointer-events: none;
+  opacity: 0.3;
+}
+
+/* Badge cascade animation */
+@keyframes badge-cascade {
   0% {
-    transform: translateY(-100%);
+    opacity: 0;
+    transform: translateY(-20px) scale(0.9);
+  }
+  60% {
+    transform: translateY(0) scale(1.02);
   }
   100% {
-    transform: translateY(100%);
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 
-.animate-scanline {
-  animation: scanline 8s linear infinite;
+.badge-cascade {
+  animation: badge-cascade 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
-/* CRT flicker effect */
-@keyframes flicker {
+/* Number reveal animation */
+@keyframes number-lock {
   0% {
-    opacity: 0.97;
+    transform: scale(1);
   }
   50% {
-    opacity: 1;
+    transform: scale(1.05);
   }
   100% {
-    opacity: 0.97;
+    transform: scale(1);
   }
 }
 
-body {
-  animation: flicker 0.15s infinite;
+.number-lock {
+  animation: number-lock 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* EP count-up shimmer */
+@keyframes ep-shimmer {
+  0% {
+    background-position: -200% center;
+  }
+  100% {
+    background-position: 200% center;
+  }
+}
+
+.ep-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--accent-cyan) 0%,
+    var(--accent-lime) 50%,
+    var(--accent-cyan) 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: ep-shimmer 2s linear infinite;
+}
+
+/* Button press effect */
+.btn-press {
+  transition: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-press:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+/* Loading skeleton */
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-panel) 0%,
+    var(--bg-panel-hover) 50%,
+    var(--bg-panel) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+/* Smooth transitions */
+.transition-smooth {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Focus visible for accessibility */
+*:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-void);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-bright);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-cyan);
+}
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .glow-mythic {
+    animation: none;
+  }
+  
+  .ep-shimmer {
+    animation: none;
+    background: var(--accent-cyan);
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+}
+
+/* Admin theme overrides */
+.admin-theme {
+  --accent-primary: #ef4444;
+  --accent-secondary: #fbbf24;
 }

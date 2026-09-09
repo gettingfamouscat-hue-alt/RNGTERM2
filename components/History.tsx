@@ -5,68 +5,89 @@ interface HistoryProps {
 }
 
 export function History({ rolls }: HistoryProps) {
-  const getRarityColor = (rarity: string) => {
-    const colors: Record<string, string> = {
-      Mythic: 'text-purple-400',
-      Anomaly: 'text-pink-400',
-      Epic: 'text-yellow-400',
-      Rare: 'text-blue-400',
-      Uncommon: 'text-green-400',
-      Common: 'text-gray-400',
-      Trash: 'text-gray-600',
-    };
-    return colors[rarity] || 'text-white';
+  const getRarityClasses = (rarity: string) => {
+    return `text-rarity-${rarity.toLowerCase()}`;
   };
 
   if (rolls.length === 0) {
     return (
-      <div className="border border-gray-700 bg-black/40 rounded-lg p-8 text-center">
-        <p className="text-gray-500 text-lg">No rolls yet</p>
-        <p className="text-gray-600 text-sm mt-2">Roll today to start your history!</p>
+      <div 
+        className="rounded-2xl p-12 text-center border"
+        style={{
+          backgroundColor: 'var(--bg-panel)',
+          borderColor: 'var(--border-dim)',
+        }}
+      >
+        <div className="text-6xl mb-4 opacity-20">📜</div>
+        <p className="text-lg font-medium text-muted mb-1">No rolls yet</p>
+        <p className="text-sm text-dim">Roll today to start your history!</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {rolls.map((roll) => (
         <div
           key={roll.id}
-          className="border-2 border-green-500/30 bg-black/40 rounded-lg p-6 hover:border-green-500/50 transition-colors"
+          className="rounded-xl border p-4 sm:p-6 transition-smooth hover:bg-panel-hover"
+          style={{
+            backgroundColor: 'var(--bg-panel)',
+            borderColor: 'var(--border-base)',
+          }}
         >
-          <div className="flex flex-col md:flex-row md:items-center justify-between mb-4">
-            <div>
-              <div className="text-3xl font-bold text-white font-mono mb-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+            <div className="space-y-2">
+              <div className="text-3xl sm:text-4xl font-bold font-mono text-primary">
                 {roll.rollNumber.toLocaleString()}
               </div>
-              <div className="flex items-center gap-4 text-sm">
-                <span className={`font-bold uppercase ${getRarityColor(roll.rarity)}`}>
+              
+              <div className="flex flex-wrap items-center gap-3 text-sm">
+                <span className={`font-bold uppercase ${getRarityClasses(roll.rarity)}`}>
                   {roll.rarity}
                 </span>
-                <span className="text-cyan-400">
+                <span className="text-cyan-400 font-mono">
                   +{roll.totalEP.toLocaleString()} EP
                 </span>
-                <span className="text-green-600">
-                  {new Date(roll.rollDate).toLocaleDateString()}
+                <span className="text-muted">
+                  {new Date(roll.rollDate).toLocaleDateString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                  })}
                 </span>
               </div>
             </div>
-            <div className="mt-4 md:mt-0">
-              <div className="text-right text-green-400 font-bold">
-                {roll.badges?.length || 0} Badges
+            
+            <div className="text-left sm:text-right">
+              <div className="text-2xl font-bold text-cyan-400">
+                {roll.badges?.length || 0}
+              </div>
+              <div className="text-xs text-muted uppercase tracking-wide">
+                Badges
               </div>
             </div>
           </div>
 
           {roll.badges && roll.badges.length > 0 && (
-            <div className="border-t border-green-500/20 pt-4">
+            <div 
+              className="border-t pt-4 space-y-2"
+              style={{ borderColor: 'var(--border-dim)' }}
+            >
+              <div className="text-xs text-muted uppercase tracking-wider mb-2">
+                Earned Badges
+              </div>
               <div className="flex flex-wrap gap-2">
                 {roll.badges.map((badge: any) => (
                   <div
                     key={badge.id}
-                    className="px-3 py-1 border border-green-500/30 rounded bg-green-500/5 text-xs text-green-400"
+                    className={`
+                      px-3 py-1.5 rounded-lg border text-xs font-medium
+                      ${`border-rarity-${badge.rarity.toLowerCase()} bg-rarity-${badge.rarity.toLowerCase()} text-rarity-${badge.rarity.toLowerCase()}`}
+                    `}
                   >
-                    {badge.name} <span className="text-green-600">+{badge.epValue}</span>
+                    <span className="font-bold">{badge.name}</span>
+                    <span className="opacity-60 ml-1.5">+{badge.epValue}</span>
                   </div>
                 ))}
               </div>

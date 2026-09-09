@@ -13,108 +13,146 @@ interface RollAnimationProps {
 export function RollAnimation({ rolling, result, onRoll, hasRolledToday, error }: RollAnimationProps) {
   const [displayNumber, setDisplayNumber] = useState<number | null>(null);
   const [animating, setAnimating] = useState(false);
+  const [showResult, setShowResult] = useState(false);
 
   useEffect(() => {
     if (result && !animating) {
       setAnimating(true);
-      // Animate number reveal
+      setShowResult(false);
+      
+      // Fast scramble phase
       let count = 0;
       const interval = setInterval(() => {
         setDisplayNumber(Math.floor(Math.random() * 1000001));
         count++;
-        if (count > 20) {
+        if (count > 24) {
           clearInterval(interval);
           setDisplayNumber(result.rollNumber);
-          setTimeout(() => setAnimating(false), 500);
+          setTimeout(() => {
+            setAnimating(false);
+            setShowResult(true);
+          }, 300);
         }
-      }, 50);
+      }, 40);
+      
       return () => clearInterval(interval);
     }
   }, [result]);
 
-  const getRarityColor = (rarity: string) => {
-    const colors: Record<string, string> = {
-      Mythic: 'text-purple-400 glow-purple',
-      Anomaly: 'text-pink-400 glow-pink',
-      Epic: 'text-yellow-400 glow-yellow',
-      Rare: 'text-blue-400 glow-blue',
-      Uncommon: 'text-green-400 glow-green',
-      Common: 'text-gray-400',
-      Trash: 'text-gray-600',
+  const getRarityClasses = (rarity: string) => {
+    const classes: Record<string, string> = {
+      Mythic: 'text-rarity-mythic glow-mythic',
+      Anomaly: 'text-rarity-anomaly glow-anomaly',
+      Epic: 'text-rarity-epic glow-epic',
+      Rare: 'text-rarity-rare glow-rare',
+      Uncommon: 'text-rarity-uncommon',
+      Common: 'text-rarity-common',
+      Trash: 'text-rarity-trash',
     };
-    return colors[rarity] || 'text-white';
+    return classes[rarity] || 'text-primary';
   };
 
   return (
     <div className="relative">
-      {/* Scanline effect */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-green-500/5 to-transparent animate-scanline pointer-events-none" />
-      
-      <div className="border-2 border-green-500/50 bg-black/60 backdrop-blur-sm rounded-lg p-8 relative overflow-hidden">
-        {/* Corner brackets */}
-        <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-cyan-400" />
-        <div className="absolute top-0 right-0 w-8 h-8 border-t-2 border-r-2 border-cyan-400" />
-        <div className="absolute bottom-0 left-0 w-8 h-8 border-b-2 border-l-2 border-cyan-400" />
-        <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-cyan-400" />
+      <div 
+        className="rounded-2xl p-6 sm:p-8 lg:p-12 relative overflow-hidden border backdrop-blur-sm transition-smooth"
+        style={{ 
+          backgroundColor: 'var(--bg-panel)',
+          borderColor: 'var(--border-base)',
+        }}
+      >
+        {/* Corner accents */}
+        <div className="absolute top-0 left-0 w-12 h-12 border-t-2 border-l-2 border-cyan-400/50" />
+        <div className="absolute top-0 right-0 w-12 h-12 border-t-2 border-r-2 border-cyan-400/50" />
+        <div className="absolute bottom-0 left-0 w-12 h-12 border-b-2 border-l-2 border-cyan-400/50" />
+        <div className="absolute bottom-0 right-0 w-12 h-12 border-b-2 border-r-2 border-cyan-400/50" />
         
-        <div className="text-center">
-          <h2 className="text-xl text-green-400 mb-6 uppercase tracking-widest">
-            &gt; Daily Roll Terminal
-          </h2>
+        <div className="text-center space-y-6 sm:space-y-8">
+          {/* Title */}
+          <div>
+            <h2 className="text-sm sm:text-base font-medium uppercase tracking-widest text-cyan-400 mb-1">
+              Daily Roll Terminal
+            </h2>
+            <p className="text-xs text-muted">0 → 1,000,000</p>
+          </div>
           
-          {displayNumber !== null && (
-            <div className="mb-8">
-              <div className={`text-7xl font-bold mb-4 ${animating ? 'text-white blur-sm' : getRarityColor(result?.rarity || '')}`}>
-                {displayNumber.toLocaleString()}
-              </div>
-              {result && !animating && (
-                <div className="space-y-2">
-                  <div className={`text-2xl font-bold uppercase tracking-widest ${getRarityColor(result.rarity)}`}>
-                    {result.rarity}
-                  </div>
-                  <div className="text-lg text-cyan-400">
-                    +{result.totalEP.toLocaleString()} EP
-                  </div>
+          {/* Number Display */}
+          <div className="py-8 sm:py-12">
+            {displayNumber !== null ? (
+              <div className="space-y-4">
+                <div 
+                  className={`text-5xl sm:text-7xl lg:text-8xl font-bold font-mono tracking-tight transition-all duration-300 ${
+                    animating ? 'blur-sm opacity-50 scale-95' : `number-lock ${getRarityClasses(result?.rarity || '')}`
+                  }`}
+                >
+                  {displayNumber.toLocaleString()}
                 </div>
-              )}
-            </div>
-          )}
+                
+                {result && showResult && (
+                  <div className="space-y-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                    <div className={`text-2xl sm:text-3xl font-bold uppercase tracking-wider ${getRarityClasses(result.rarity)}`}>
+                      {result.rarity}
+                    </div>
+                    {result.totalEP > 0 ? (
+                      <div className="text-lg sm:text-xl font-mono ep-shimmer font-bold">
+                        +{result.totalEP.toLocaleString()} EP
+                      </div>
+                    ) : (
+                      <div className="text-lg text-muted">
+                        No badges earned
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-7xl sm:text-8xl text-muted/30 font-mono">
+                ??????
+              </div>
+            )}
+          </div>
           
-          {!result && !rolling && (
-            <div className="mb-8 text-6xl text-green-600">
-              ??????
-            </div>
-          )}
-          
+          {/* Error Message */}
           {error && (
-            <div className="mb-6 p-4 border border-red-500/50 bg-red-500/10 rounded text-red-400">
+            <div 
+              className="p-4 rounded-xl border text-sm"
+              style={{
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                borderColor: '#ef4444',
+                color: '#fca5a5',
+              }}
+            >
               {error}
             </div>
           )}
           
-          <button
-            onClick={onRoll}
-            disabled={rolling || hasRolledToday}
-            className={`
-              relative px-12 py-4 text-xl font-bold uppercase tracking-wider
-              border-2 rounded transition-all duration-200
-              ${hasRolledToday
-                ? 'border-gray-700 text-gray-700 cursor-not-allowed'
-                : rolling
-                ? 'border-yellow-400 text-yellow-400 animate-pulse'
-                : 'border-green-400 text-green-400 hover:bg-green-400 hover:text-black hover:shadow-[0_0_30px_rgba(74,222,128,0.5)]'
-              }
-            `}
-          >
-            {rolling && <span className="inline-block animate-spin mr-2">⟳</span>}
-            {rolling ? 'ROLLING...' : hasRolledToday ? 'COME BACK TOMORROW' : 'ROLL NOW'}
-          </button>
-          
-          {hasRolledToday && (
-            <p className="mt-4 text-sm text-green-600">
-              Next roll available in {getTimeUntilNextRoll()}
-            </p>
-          )}
+          {/* Roll Button */}
+          <div className="space-y-4">
+            <button
+              onClick={onRoll}
+              disabled={rolling || hasRolledToday}
+              className={`
+                w-full sm:w-auto px-8 sm:px-16 py-4 sm:py-5 
+                text-base sm:text-lg font-bold uppercase tracking-wider
+                rounded-xl border-2 transition-smooth btn-press
+                ${hasRolledToday
+                  ? 'border-dim text-dim cursor-not-allowed opacity-50'
+                  : rolling
+                  ? 'border-cyan-400 text-cyan-400 animate-pulse'
+                  : 'border-cyan-400 text-cyan-400 hover:bg-cyan-400 hover:text-void hover:shadow-[0_0_40px_rgba(34,211,238,0.4)]'
+                }
+              `}
+            >
+              {rolling && <span className="inline-block animate-spin mr-2">⟳</span>}
+              {rolling ? 'Rolling...' : hasRolledToday ? 'Rolled Today' : 'Roll Now'}
+            </button>
+            
+            {hasRolledToday && (
+              <p className="text-xs sm:text-sm text-muted">
+                Next roll in <span className="text-cyan-400 font-mono">{getTimeUntilNextRoll()}</span>
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>
