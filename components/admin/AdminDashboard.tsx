@@ -11,6 +11,7 @@ import {
   toggleBadge,
   deletePlayer,
   createBadge,
+  adminAutoRoll,
 } from '@/app/admin/actions';
 import { SAFE_DETECTOR_PRESETS } from '@/lib/dynamicBadges';
 
@@ -19,7 +20,7 @@ interface AdminDashboardProps {
 }
 
 export function AdminDashboard({ onLogout }: AdminDashboardProps) {
-  const [view, setView] = useState<'dashboard' | 'players' | 'rolls' | 'badges'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'players' | 'rolls' | 'badges' | 'autoroll'>('dashboard');
   const [stats, setStats] = useState<any>(null);
   const [players, setPlayers] = useState<any[]>([]);
   const [rolls, setRolls] = useState<any[]>([]);
@@ -36,6 +37,10 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     detectorType: 'exact',
     detectorValue: '',
   });
+  const [autoRollPlayer, setAutoRollPlayer] = useState('');
+  const [autoRollCount, setAutoRollCount] = useState(10);
+  const [autoRollResults, setAutoRollResults] = useState<any[]>([]);
+  const [autoRollRunning, setAutoRollRunning] = useState(false);
 
   useEffect(() => {
     loadStats();
@@ -200,6 +205,39 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       await loadBadges();
     } catch (e: any) {
       alert(`❌ Error: ${e.message}`);
+    }
+  }
+
+  async function handleAutoRoll(e: React.FormEvent) {
+    e.preventDefault();
+    
+    if (!autoRollPlayer) {
+      alert('Please search and select a player first.');
+      return;
+    }
+
+    if (autoRollCount < 1 || autoRollCount > 100) {
+      alert('Roll count must be between 1 and 100.');
+      return;
+    }
+
+    if (!confirm(`Run ${autoRollCount} auto-roll(s) for selected player?`)) {
+      return;
+    }
+
+    setAutoRollRunning(true);
+    setAutoRollResults([]);
+
+    try {
+      const result = await adminAutoRoll(autoRollPlayer, autoRollCount);
+      if (result.success) {
+        setAutoRollResults(result.results);
+        alert(`✅ Successfully completed ${autoRollCount} roll(s)!`);
+      }
+    } catch (e: any) {
+      alert(`❌ Error: ${e.message}`);
+    } finally {
+      setAutoRollRunning(false);
     }
   }
 

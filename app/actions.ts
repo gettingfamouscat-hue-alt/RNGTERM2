@@ -158,13 +158,22 @@ export async function getTodayLeaderboard() {
       },
     },
     orderBy: { totalEP: 'desc' },
-    take: 10,
+    take: 100,
   });
   
-  return topRolls.map(roll => ({
-    ...roll,
-    badges: roll.badges.map(rb => rb.badge),
-  }));
+  // Filter out guest players (Player + digits) from leaderboard
+  return topRolls
+    .filter(roll => !/^Player\d+$/.test(roll.player.displayName))
+    .map(roll => ({
+      displayName: roll.player.displayName,
+      rollNumber: roll.rollNumber,
+      totalEP: roll.totalEP,
+      rarity: roll.rarity,
+      badges: roll.badges.map(rb => ({
+        name: rb.badge.name,
+        rarity: rb.badge.rarity,
+      })),
+    }));
 }
 
 export async function getAllTimeLeaderboard() {

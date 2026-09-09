@@ -3,6 +3,7 @@
 import { prisma } from '@/lib/prisma';
 import { getSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
+import crypto from 'crypto';
 
 export async function adminLogin(username: string, password: string) {
   try {
@@ -12,7 +13,7 @@ export async function adminLogin(username: string, password: string) {
     if (!correctUsername || !correctPassword) {
       return { success: false, error: 'Admin credentials are not configured' };
     }
-
+    
     if (username === correctUsername && password === correctPassword) {
       const session = await getSession();
       session.isAdmin = true;
@@ -110,27 +111,21 @@ export async function searchPlayers(query: string) {
   const players = await prisma.player.findMany({
     where: {
       OR: [
-        { displayName: { contains: query } },
-        { id: { contains: query } },
+        { displayName: { contains: query, mode: 'insensitive' } },
+        { id: query },
       ],
     },
-    include: {
-      rolls: {
-        orderBy: { rollDate: 'desc' },
-        take: 5,
-      },
-    },
-    take: 20,
+    orderBy: { totalEP: 'desc' },
+    take: 50,
   });
   
   return players;
 }
 
-export async function getAllRolls(page: number = 0) {
+export async function getAllRolls(offset: number = 0) {
   const isAdmin = await checkAdminAuth();
   if (!isAdmin) throw new Error('Unauthorized');
   
-  const pageSize = 50;
   const rolls = await prisma.roll.findMany({
     include: {
       player: true,
@@ -141,13 +136,11 @@ export async function getAllRolls(page: number = 0) {
       },
     },
     orderBy: { rollDate: 'desc' },
-    skip: page * pageSize,
-    take: pageSize,
+    skip: offset,
+    take: 100,
   });
   
-  const total = await prisma.roll.count();
-  
-  return { rolls, total, pageSize };
+  return { rolls };
 }
 
 export async function toggleMaintenance() {
@@ -155,72 +148,38 @@ export async function toggleMaintenance() {
   if (!isAdmin) throw new Error('Unauthorized');
   
   const current = await prisma.maintenanceMode.findUnique({ where: { id: 1 } });
-  const newValue = !current?.enabled;
   
-  await prisma.maintenanceMode.update({
-    where: { id: 1 },
-    data: { enabled: newValue },
-  });
+  if (!current) {
+    await prisma.maintenanceMode.create({
+      data: { id: 1, enabled: true },
+    });
+  } else {
+    await prisma.maintenanceMode.update({
+      where: { id: 1 },
+      data: { enabled: !current.enabled },
+    });
+  }
   
-  return { enabled: newValue };
+  return { success: true };
 }
 
 export async function grantExtraRoll(playerId: string) {
+  const isAdmin = await checkAdminAuth();
+  if (!isAdmin) throw new Error('Unauthorized');
+  
   try {
-    const isAdmin = await checkAdminAuth();
-    if (!isAdmin) throw new Error('Unauthorized');
-    
-    const today = new Date().toISOString().split('T')[0];
-    
-    // Delete today's roll if exists (allows player to roll again)
-    const deleted = await prisma.roll.deleteMany({
+    const utcDate = new Date().toISOString().split('T')[0];
+    const result = await prisma.roll.deleteMany({
       where: {
         playerId,
-        utcDate: today,
+        utcDate,
       },
     });
     
-    return { success: true, rollsDeleted: deleted.count };
+    return { success: true, rollsDeleted: result.count };
   } catch (error) {
     console.error('Grant roll error:', error);
-    throw new Error(error instanceof Error ? error.message : 'Failed to grant extra roll');
-  }
-}
-
-export async function toggleBadge(badgeId: string) {
-  try {
-    const isAdmin = await checkAdminAuth();
-    if (!isAdmin) throw new Error('Unauthorized');
-    
-    const badge = await prisma.badge.findUnique({ where: { id: badgeId } });
-    if (!badge) throw new Error('Badge not found');
-    
-    await prisma.badge.update({
-      where: { id: badgeId },
-      data: { enabled: !badge.enabled },
-    });
-    
-    return { enabled: !badge.enabled };
-  } catch (error) {
-    console.error('Toggle badge error:', error);
-    throw new Error(error instanceof Error ? error.message : 'Failed to toggle badge');
-  }
-}
-
-export async function deletePlayer(playerId: string) {
-  try {
-    const isAdmin = await checkAdminAuth();
-    if (!isAdmin) throw new Error('Unauthorized');
-    
-    // Cascade delete: rolls will be deleted automatically due to FK constraints
-    await prisma.player.delete({
-      where: { id: playerId },
-    });
-    
-    return { success: true };
-  } catch (error) {
-    console.error('Delete player error:', error);
-    throw new Error(error instanceof Error ? error.message : 'Failed to delete player');
+    throw new Error('Failed to grant extra roll');
   }
 }
 
@@ -229,15 +188,57 @@ export async function getAllBadges() {
   if (!isAdmin) throw new Error('Unauthorized');
   
   const badges = await prisma.badge.findMany({
-    include: {
-      _count: {
-        select: { rollBadges: true },
-      },
-    },
     orderBy: { name: 'asc' },
   });
   
-  return badges;
+  const badgesWithCount = await Promise.all(
+    badges.map(async (badge) => {
+      const count = await prisma.rollBadge.count({
+        where: { badgeId: badge.id },
+      });
+      return {
+        ...badge,
+        timesEarned: count,
+      };
+    })
+  );
+  
+  return badgesWithCount;
+}
+
+export async function toggleBadge(badgeId: string) {
+  const isAdmin = await checkAdminAuth();
+  if (!isAdmin) throw new Error('Unauthorized');
+  
+  try {
+    const badge = await prisma.badge.findUnique({ where: { id: badgeId } });
+    if (!badge) throw new Error('Badge not found');
+    
+    await prisma.badge.update({
+      where: { id: badgeId },
+      data: { enabled: !badge.enabled },
+    });
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Toggle badge error:', error);
+    throw new Error('Failed to toggle badge');
+  }
+}
+
+export async function deletePlayer(playerId: string) {
+  const isAdmin = await checkAdminAuth();
+  if (!isAdmin) throw new Error('Unauthorized');
+  
+  try {
+    await prisma.player.delete({
+      where: { id: playerId },
+    });
+    return { success: true };
+  } catch (error) {
+    console.error('Delete player error:', error);
+    throw new Error('Failed to delete player');
+  }
 }
 
 export async function createBadge(data: {
@@ -249,31 +250,11 @@ export async function createBadge(data: {
   detectorType: string;
   detectorValue: string;
 }) {
+  const isAdmin = await checkAdminAuth();
+  if (!isAdmin) throw new Error('Unauthorized');
+
   try {
-    const isAdmin = await checkAdminAuth();
-    if (!isAdmin) throw new Error('Unauthorized');
-    
-    // Validate inputs
-    if (!data.name || !data.code || !data.description) {
-      throw new Error('Name, code, and description are required');
-    }
-    
-    if (!['Common', 'Uncommon', 'Rare', 'Epic', 'Anomaly', 'Mythic'].includes(data.rarity)) {
-      throw new Error('Invalid rarity');
-    }
-    
-    if (data.epValue < 0 || data.epValue > 100000) {
-      throw new Error('EP value must be between 0 and 100,000');
-    }
-    
-    // Check if code already exists
-    const existing = await prisma.badge.findUnique({ where: { code: data.code } });
-    if (existing) {
-      throw new Error('Badge code already exists');
-    }
-    
-    // Create badge with detector config stored as JSON
-    const badge = await prisma.badge.create({
+    await prisma.badge.create({
       data: {
         name: data.name,
         code: data.code,
@@ -281,12 +262,98 @@ export async function createBadge(data: {
         rarity: data.rarity,
         epValue: data.epValue,
         enabled: true,
+        detectorType: data.detectorType,
+        detectorValue: data.detectorValue,
       },
     });
-    
-    return { success: true, badge };
+    return { success: true };
   } catch (error) {
     console.error('Create badge error:', error);
-    throw new Error(error instanceof Error ? error.message : 'Failed to create badge');
+    throw new Error('Failed to create badge');
+  }
+}
+
+export async function adminAutoRoll(playerId: string, rollCount: number) {
+  const isAdmin = await checkAdminAuth();
+  if (!isAdmin) throw new Error('Unauthorized');
+
+  if (rollCount < 1 || rollCount > 100) {
+    throw new Error('Roll count must be between 1 and 100');
+  }
+
+  try {
+    const player = await prisma.player.findUnique({ where: { id: playerId } });
+    if (!player) throw new Error('Player not found');
+
+    const results = [];
+    const { detectBadgesForRoll } = await import('@/lib/dynamicBadges');
+
+    for (let i = 0; i < rollCount; i++) {
+      const rollNumber = crypto.randomInt(0, 1000001);
+      const earnedBadges = await detectBadgesForRoll(rollNumber);
+      
+      const dbBadges = await prisma.badge.findMany({
+        where: {
+          code: { in: earnedBadges.map(b => b.code) },
+          enabled: true,
+        },
+      });
+
+      const totalEP = dbBadges.reduce((sum, b) => sum + b.epValue, 0);
+
+      let rarity = 'Trash';
+      if (totalEP >= 10000) rarity = 'Mythic';
+      else if (totalEP >= 3000) rarity = 'Anomaly';
+      else if (totalEP >= 1500) rarity = 'Epic';
+      else if (totalEP >= 500) rarity = 'Rare';
+      else if (totalEP >= 150) rarity = 'Uncommon';
+      else if (totalEP >= 50) rarity = 'Common';
+
+      const nowUtc = new Date();
+      const utcDate = nowUtc.toISOString().split('T')[0];
+
+      const roll = await prisma.roll.create({
+        data: {
+          playerId: player.id,
+          rollNumber,
+          totalEP,
+          rarity,
+          utcDate,
+        },
+      });
+
+      await prisma.rollBadge.createMany({
+        data: dbBadges.map(badge => ({
+          rollId: roll.id,
+          badgeId: badge.id,
+        })),
+      });
+
+      await prisma.player.update({
+        where: { id: player.id },
+        data: {
+          lastRollAt: nowUtc,
+          totalEP: { increment: totalEP },
+        },
+      });
+
+      results.push({
+        rollNumber,
+        totalEP,
+        rarity,
+        badges: dbBadges.map(b => ({
+          id: b.id,
+          name: b.name,
+          description: b.description,
+          rarity: b.rarity,
+          epValue: b.epValue,
+        })),
+      });
+    }
+
+    return { success: true, results };
+  } catch (error: any) {
+    console.error('Admin auto-roll error:', error);
+    throw new Error(error.message || 'Auto-roll failed');
   }
 }
