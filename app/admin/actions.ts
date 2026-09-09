@@ -33,10 +33,11 @@ export async function adminLogout() {
     const session = await getSession();
     session.isAdmin = false;
     await session.destroy();
+    return { success: true };
   } catch (error) {
     console.error('Logout error:', error);
+    return { success: false, error: 'Logout failed' };
   }
-  redirect('/admin');
 }
 
 export async function checkAdminAuth() {
@@ -119,6 +120,12 @@ export async function searchPlayers(query: string) {
         { displayName: { contains: query, mode: 'insensitive' } },
         { id: query },
       ],
+    },
+    include: {
+      rolls: {
+        orderBy: { rollDate: 'desc' },
+        take: 5,
+      },
     },
     orderBy: { totalEP: 'desc' },
     take: 50,

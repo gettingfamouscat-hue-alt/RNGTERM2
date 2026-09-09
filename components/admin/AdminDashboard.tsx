@@ -460,11 +460,11 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                       <div className="grid grid-cols-3 gap-4 text-sm">
                         <div>
                           <div className="text-xs text-muted uppercase mb-1">Total EP</div>
-                          <div className="text-lg font-bold text-red-400 font-mono">{player.totalEP.toLocaleString()}</div>
+                          <div className="text-lg font-bold text-red-400 font-mono">{(player?.totalEP ?? 0).toLocaleString()}</div>
                         </div>
                         <div>
                           <div className="text-xs text-muted uppercase mb-1">Rolls</div>
-                          <div className="text-lg font-bold text-primary">{player.rolls.length}</div>
+                          <div className="text-lg font-bold text-primary">{(player?.rolls ?? []).length}</div>
                         </div>
                         <div>
                           <div className="text-xs text-muted uppercase mb-1">Last Roll</div>
@@ -680,6 +680,166 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* Auto Roll View */}
+          {view === 'autoroll' && (
+            <div className="max-w-4xl mx-auto">
+              <h2 className="text-2xl font-bold text-red-400 mb-6">🎲 Auto Roll (Admin Only)</h2>
+              
+              <div 
+                className="rounded-xl border-2 p-6 mb-6 glass-panel"
+                style={{ borderColor: 'var(--border-base)' }}
+              >
+                <form onSubmit={handleAutoRoll} className="space-y-6">
+                  {/* Player Selection */}
+                  <div>
+                    <label className="block text-xs text-muted uppercase mb-2 font-medium">1. Select Player</label>
+                    <div className="flex gap-2 mb-3">
+                      <input
+                        type="text"
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search by name or ID..."
+                        className="flex-1 px-4 py-2 rounded-lg border text-primary outline-none transition-smooth"
+                        style={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border-base)' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSearch}
+                        disabled={loading}
+                        className="px-4 py-2 border-2 border-cyan-400 text-cyan-400 rounded-lg hover:bg-cyan-400/10 transition-smooth disabled:opacity-50"
+                      >
+                        Search
+                      </button>
+                    </div>
+                    
+                    {Array.isArray(players) && players.length > 0 && (
+                      <div className="mt-2 max-h-48 overflow-y-auto space-y-1 p-2 rounded border" style={{ borderColor: 'var(--border-dim)', backgroundColor: 'var(--bg-void)' }}>
+                        {players.map(p => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => {
+                              setAutoRollPlayer(p.id);
+                              setPlayers([]);
+                              setSearchQuery(p?.displayName || '');
+                            }}
+                            className={`w-full text-left px-3 py-2 rounded text-sm transition-smooth ${
+                              autoRollPlayer === p.id ? 'bg-cyan-400/20 text-cyan-300' : 'hover:bg-cyan-400/10 text-primary'
+                            }`}
+                          >
+                            <span className="font-medium">{p?.displayName || 'Unknown'}</span>
+                            <span className="text-muted ml-2">({(p?.totalEP ?? 0).toLocaleString()} EP)</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {autoRollPlayer && (
+                      <p className="mt-2 text-xs text-cyan-400">✓ Player selected: {searchQuery}</p>
+                    )}
+                  </div>
+
+                  {/* Roll Count */}
+                  <div>
+                    <label className="block text-xs text-muted uppercase mb-2 font-medium">2. Roll Count (1-100)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="100"
+                      value={autoRollCount}
+                      onChange={(e) => setAutoRollCount(parseInt(e.target.value) || 1)}
+                      className="w-full px-4 py-2 rounded-lg border text-primary outline-none transition-smooth font-mono"
+                      style={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border-base)' }}
+                    />
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-3">
+                    <button
+                      type="submit"
+                      disabled={autoRollRunning || !autoRollPlayer}
+                      className="px-6 py-3 border-2 border-cyan-400 text-cyan-400 font-bold uppercase rounded-lg hover:bg-cyan-400 hover:text-void transition-smooth btn-press disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {autoRollRunning ? 'Rolling...' : `Run ${autoRollCount} Roll(s)`}
+                    </button>
+                    {autoRollResults.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setAutoRollResults([])}
+                        className="px-6 py-3 border-2 text-muted rounded-lg hover:bg-white/5 transition-smooth"
+                        style={{ borderColor: 'var(--border-base)' }}
+                      >
+                        Clear Results
+                      </button>
+                    )}
+                  </div>
+                </form>
+              </div>
+
+              {/* Results */}
+              {autoRollResults.length > 0 ? (
+                <div>
+                  <h3 className="text-lg font-bold text-primary mb-4">
+                    Results ({autoRollResults.length} roll{autoRollResults.length !== 1 ? 's' : ''})
+                  </h3>
+                  <div className="space-y-3 max-h-[600px] overflow-y-auto">
+                    {autoRollResults.map((result: any, idx: number) => (
+                      <div
+                        key={idx}
+                        className="rounded-lg border p-4 glass-panel"
+                        style={{ borderColor: 'var(--border-base)' }}
+                      >
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-4">
+                            <span className="text-2xl font-bold font-mono text-primary">
+                              {(result?.rollNumber ?? 0).toLocaleString()}
+                            </span>
+                            <span
+                              className="px-3 py-1 rounded text-sm font-bold"
+                              style={{
+                                backgroundColor: `var(--rarity-${result?.rarity?.toLowerCase() || 'trash'})`,
+                                color: 'var(--bg-void)',
+                              }}
+                            >
+                              {result?.rarity || 'Trash'}
+                            </span>
+                          </div>
+                          <span className="text-lg font-bold text-cyan-400">
+                            {(result?.totalEP ?? 0).toLocaleString()} EP
+                          </span>
+                        </div>
+                        {Array.isArray(result?.badges) && result.badges.length > 0 && (
+                          <div className="flex flex-wrap gap-2">
+                            {result.badges.map((badge: any) => (
+                              <span
+                                key={badge?.id || Math.random()}
+                                className="px-2 py-1 rounded text-xs"
+                                style={{
+                                  backgroundColor: `var(--rarity-${badge?.rarity?.toLowerCase() || 'common'})20`,
+                                  color: `var(--rarity-${badge?.rarity?.toLowerCase() || 'common'})`,
+                                }}
+                              >
+                                {badge?.name || 'Unknown'}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : !autoRollPlayer ? (
+                <div 
+                  className="rounded-xl border p-8 text-center"
+                  style={{ borderColor: 'var(--border-dim)', backgroundColor: 'var(--bg-panel)' }}
+                >
+                  <div className="text-4xl mb-3 opacity-50">🎲</div>
+                  <p className="text-muted">Search and select a player to begin auto-rolling</p>
+                </div>
+              ) : null}
             </div>
           )}
         </main>

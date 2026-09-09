@@ -51,8 +51,16 @@ export default function AdminPage() {
   }
 
   async function handleLogout() {
-    await adminLogout();
-    setIsAuthenticated(false);
+    try {
+      await adminLogout();
+      setIsAuthenticated(false);
+      setUsername('');
+      setPassword('');
+      setError('');
+    } catch (e) {
+      console.error('Logout error:', e);
+      setIsAuthenticated(false);
+    }
   }
 
   if (loading) {
