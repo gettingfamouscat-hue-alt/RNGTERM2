@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { adminLogin, checkAdminAuth, adminLogout } from './actions';
-import { AdminDashboard } from '@/components/admin/AdminDashboard';
 
 export const dynamic = 'force-dynamic';
+
+const AdminDashboard = lazy(() => import('@/components/admin/AdminDashboard').then(mod => ({ default: mod.AdminDashboard })));
 
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -23,6 +24,8 @@ export default function AdminPage() {
       const authed = await checkAdminAuth();
       setIsAuthenticated(authed);
     } catch (e) {
+      console.error('Auth check failed:', e);
+      setError('Failed to check authentication. Please try logging in.');
       setIsAuthenticated(false);
     } finally {
       setLoading(false);
@@ -160,5 +163,15 @@ export default function AdminPage() {
     );
   }
 
-  return <AdminDashboard onLogout={handleLogout} />;
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen flex items-center justify-center" style={{ backgroundColor: 'var(--bg-void)' }}>
+          <div className="text-xl text-muted animate-pulse">Loading admin dashboard...</div>
+        </div>
+      }
+    >
+      <AdminDashboard onLogout={handleLogout} />
+    </Suspense>
+  );
 }

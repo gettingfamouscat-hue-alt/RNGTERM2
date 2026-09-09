@@ -40,8 +40,13 @@ export async function adminLogout() {
 }
 
 export async function checkAdminAuth() {
-  const session = await getSession();
-  return session.isAdmin === true;
+  try {
+    const session = await getSession();
+    return session.isAdmin === true;
+  } catch (error) {
+    console.error('checkAdminAuth error:', error);
+    return false;
+  }
 }
 
 export async function getAdminStats() {

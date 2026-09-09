@@ -13,7 +13,7 @@ import {
   createBadge,
   adminAutoRoll,
 } from '@/app/admin/actions';
-import { SAFE_DETECTOR_PRESETS } from '@/lib/dynamicBadges';
+import { SAFE_DETECTOR_PRESETS } from '@/lib/badgePresets';
 
 interface AdminDashboardProps {
   onLogout: () => void;
