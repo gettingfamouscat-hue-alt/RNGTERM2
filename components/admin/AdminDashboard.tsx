@@ -41,6 +41,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [autoRollCount, setAutoRollCount] = useState(10);
   const [autoRollResults, setAutoRollResults] = useState<any[]>([]);
   const [autoRollRunning, setAutoRollRunning] = useState(false);
+  const [adminMessage, setAdminMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   useEffect(() => {
     loadStats();
@@ -111,26 +112,34 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     try {
       await toggleMaintenance();
       await loadStats();
-    } catch (e) {
-      alert('Failed to toggle maintenance mode');
+    } catch (e: any) {
+      alert(`❌ Error: ${e?.message || String(e)}`);
     }
   }
 
   async function handleGrantRoll(playerId: string, playerName: string) {
-    if (!confirm(`Grant extra roll to ${playerName}?\n\nThis will delete their today's roll (if any) so they can roll again.`)) return;
+    if (!confirm(`Remove recent rolls for ${playerName}?\n\nThis will delete their most recent rolls and reduce their EP, giving them a "fresh start".`)) return;
+    
+    setAdminMessage(null);
+    
     try {
       const result = await grantExtraRoll(playerId);
-      if (result.rollsDeleted > 0) {
-        alert(`✅ Deleted ${result.rollsDeleted} roll(s) for ${playerName}. Note: Players can now roll infinitely.`);
-      } else {
-        alert(`ℹ️ ${playerName} had no rolls today. Note: Players can now roll infinitely.`);
-      }
+      
+      const message = result.rollsDeleted > 0 
+        ? `✅ ${playerName}: Removed ${result.rollsDeleted} roll(s), -${result.epRemoved} EP. New total: ${result.newTotalEP} EP (${result.newRollCount} rolls)`
+        : `ℹ️ ${playerName} has no rolls to remove`;
+      
+      setAdminMessage({ type: 'success', text: message });
+      alert(message);
+      
       // Refresh player data
       if (searchQuery) {
         await handleSearch();
       }
     } catch (e: any) {
-      alert(`❌ Error: ${e.message}`);
+      const errorMsg = `❌ Error: ${e?.message || String(e)}`;
+      setAdminMessage({ type: 'error', text: errorMsg });
+      alert(errorMsg);
     }
   }
 
@@ -150,21 +159,29 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     // Double confirmation for destructive action
     const confirmation = prompt(`Type "${playerName}" to confirm deletion:`);
     if (confirmation !== playerName) {
-      alert('Deletion cancelled - name did not match.');
+      setAdminMessage({ type: 'error', text: 'Deletion cancelled - name did not match' });
       return;
     }
     
+    setAdminMessage(null);
+    
     try {
       await deletePlayer(playerId);
-      alert(`✅ Player "${playerName}" has been permanently deleted.`);
+      const successMsg = `✅ Player "${playerName}" has been permanently deleted`;
+      setAdminMessage({ type: 'success', text: successMsg });
+      alert(successMsg);
+      
+      // Remove from local state immediately
+      setPlayers(prev => prev.filter(p => p.id !== playerId));
+      
       // Refresh search results
       if (searchQuery) {
         await handleSearch();
-      } else {
-        setPlayers([]);
       }
     } catch (e: any) {
-      alert(`❌ Error: ${e.message}`);
+      const errorMsg = `❌ Error: ${e?.message || String(e)}`;
+      setAdminMessage({ type: 'error', text: errorMsg });
+      alert(errorMsg);
     }
   }
 
@@ -443,12 +460,14 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                         </div>
                         <div className="flex gap-2">
                           <button
+                            type="button"
                             onClick={() => handleGrantRoll(player.id, player.displayName)}
                             className="px-4 py-2 border border-yellow-500 text-yellow-400 text-sm rounded-lg hover:bg-yellow-500/10 transition-smooth"
                           >
                             Grant Roll
                           </button>
                           <button
+                            type="button"
                             onClick={() => handleDeletePlayer(player.id, player.displayName)}
                             className="px-4 py-2 border border-red-500 text-red-400 text-sm rounded-lg hover:bg-red-500/10 transition-smooth"
                           >

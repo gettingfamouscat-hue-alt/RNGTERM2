@@ -180,18 +180,77 @@ export async function grantExtraRoll(playerId: string) {
   if (!isAdmin) throw new Error('Unauthorized');
   
   try {
-    const utcDate = new Date().toISOString().split('T')[0];
-    const result = await prisma.roll.deleteMany({
-      where: {
-        playerId,
-        utcDate,
+    // Get player's most recent roll(s) to delete
+    const recentRolls = await prisma.roll.findMany({
+      where: { playerId },
+      orderBy: { rollDate: 'desc' },
+      take: 3, // Delete up to 3 most recent rolls for visible impact
+      include: {
+        badges: true,
       },
     });
     
-    return { success: true, rollsDeleted: result.count };
-  } catch (error) {
+    if (recentRolls.length === 0) {
+      return { 
+        success: true, 
+        rollsDeleted: 0, 
+        epRemoved: 0,
+        message: 'Player has no rolls to remove'
+      };
+    }
+    
+    const rollIds = recentRolls.map(r => r.id);
+    const epRemoved = recentRolls.reduce((sum, r) => sum + r.totalEP, 0);
+    
+    // Delete in transaction
+    await prisma.$transaction(async (tx) => {
+      // Delete RollBadges
+      await tx.rollBadge.deleteMany({
+        where: { rollId: { in: rollIds } },
+      });
+      
+      // Delete Rolls
+      await tx.roll.deleteMany({
+        where: { id: { in: rollIds } },
+      });
+      
+      // Recalculate player's total EP and update lastRollAt
+      const remainingRolls = await tx.roll.findMany({
+        where: { playerId },
+        orderBy: { rollDate: 'desc' },
+      });
+      
+      const newTotalEP = remainingRolls.reduce((sum, r) => sum + r.totalEP, 0);
+      const newLastRollAt = remainingRolls.length > 0 ? remainingRolls[0].rollDate : null;
+      
+      await tx.player.update({
+        where: { id: playerId },
+        data: {
+          totalEP: newTotalEP,
+          lastRollAt: newLastRollAt,
+        },
+      });
+    });
+    
+    // Get updated counts
+    const finalPlayer = await prisma.player.findUnique({
+      where: { id: playerId },
+      include: {
+        rolls: true,
+      },
+    });
+    
+    return { 
+      success: true, 
+      rollsDeleted: recentRolls.length,
+      epRemoved,
+      newTotalEP: finalPlayer?.totalEP ?? 0,
+      newRollCount: finalPlayer?.rolls?.length ?? 0,
+      message: `Removed ${recentRolls.length} recent roll(s), -${epRemoved} EP`
+    };
+  } catch (error: any) {
     console.error('Grant roll error:', error);
-    throw new Error('Failed to grant extra roll');
+    throw new Error(error?.message || 'Failed to grant extra roll');
   }
 }
 
@@ -256,13 +315,37 @@ export async function deletePlayer(playerId: string) {
   if (!isAdmin) throw new Error('Unauthorized');
   
   try {
-    await prisma.player.delete({
-      where: { id: playerId },
+    // Use transaction for cascade delete (in case schema not updated yet)
+    await prisma.$transaction(async (tx) => {
+      // Get player's roll IDs
+      const playerRolls = await tx.roll.findMany({
+        where: { playerId },
+        select: { id: true },
+      });
+      const rollIds = playerRolls.map(r => r.id);
+      
+      // Delete RollBadges for those rolls
+      if (rollIds.length > 0) {
+        await tx.rollBadge.deleteMany({
+          where: { rollId: { in: rollIds } },
+        });
+        
+        // Delete Rolls
+        await tx.roll.deleteMany({
+          where: { playerId },
+        });
+      }
+      
+      // Delete Player
+      await tx.player.delete({
+        where: { id: playerId },
+      });
     });
+    
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Delete player error:', error);
-    throw new Error('Failed to delete player');
+    throw new Error(error?.message || 'Failed to delete player');
   }
 }
 
