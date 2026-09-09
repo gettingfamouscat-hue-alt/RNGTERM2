@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Player {
+  id          String   @id @default(uuid())
+  displayName String
+  createdAt   DateTime @default(now())
+  lastRollAt  DateTime?
+  totalEP     Int      @default(0)
+  rolls       Roll[]
+}
+
+model Roll {
+  id         String       @id @default(uuid())
+  playerId   String
+  player     Player       @relation(fields: [playerId], references: [id])
+  rollNumber Int
+  totalEP    Int
+  rarity     String
+  rollDate   DateTime     @default(now())
+  utcDate    String
+  badges     RollBadge[]
+  
+  @@index([playerId])
+  @@index([utcDate])
+  @@index([totalEP])
+}
+
+model Badge {
+  id          String      @id @default(uuid())
+  code        String      @unique
+  name        String
+  description String
+  rarity      String
+  epValue     Int
+  enabled     Boolean     @default(true)
+  rollBadges  RollBadge[]
+}
+
+model RollBadge {
+  id      String @id @default(uuid())
+  rollId  String
+  badgeId String
+  roll    Roll   @relation(fields: [rollId], references: [id], onDelete: Cascade)
+  badge   Badge  @relation(fields: [badgeId], references: [id])
+  
+  @@unique([rollId, badgeId])
+  @@index([rollId])
+  @@index([badgeId])
+}
+
+model MaintenanceMode {
+  id      Int     @id @default(1)
+  enabled Boolean @default(false)
+}
