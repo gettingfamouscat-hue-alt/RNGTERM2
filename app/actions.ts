@@ -2,6 +2,7 @@
 
 import { prisma } from '@/lib/prisma';
 import { analyzeRoll } from '@/lib/badges';
+import { detectBadgesForRoll } from '@/lib/dynamicBadges';
 import { randomInt } from 'crypto';
 import { cookies } from 'next/headers';
 
@@ -59,8 +60,18 @@ export async function performRoll() {
     // Generate random number
     const rollNumber = randomInt(0, 1000001); // 0 to 1,000,000 inclusive
     
-    // Analyze for badges
-    const { badges, totalEP, rarity } = analyzeRoll(rollNumber);
+    // Detect badges using DB-driven detection (supports both static and dynamic badges)
+    const dbBadges = await detectBadgesForRoll(rollNumber);
+    
+    // Calculate total EP and rarity
+    const totalEP = dbBadges.reduce((sum, badge) => sum + badge.epValue, 0);
+    let rarity = 'Trash';
+    if (totalEP >= 8000) rarity = 'Mythic';
+    else if (totalEP >= 3000) rarity = 'Anomaly';
+    else if (totalEP >= 1500) rarity = 'Epic';
+    else if (totalEP >= 500) rarity = 'Rare';
+    else if (totalEP >= 150) rarity = 'Uncommon';
+    else if (totalEP >= 50) rarity = 'Common';
     
     // Create roll
     const roll = await prisma.roll.create({
@@ -70,15 +81,6 @@ export async function performRoll() {
         totalEP,
         rarity,
         utcDate,
-      },
-    });
-    
-    // Fetch badge IDs from database
-    const badgeCodes = badges.map(b => b.code);
-    const dbBadges = await prisma.badge.findMany({
-      where: {
-        code: { in: badgeCodes },
-        enabled: true,
       },
     });
     

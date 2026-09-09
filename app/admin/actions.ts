@@ -184,18 +184,40 @@ export async function grantExtraRoll(playerId: string) {
 }
 
 export async function toggleBadge(badgeId: string) {
-  const isAdmin = await checkAdminAuth();
-  if (!isAdmin) throw new Error('Unauthorized');
-  
-  const badge = await prisma.badge.findUnique({ where: { id: badgeId } });
-  if (!badge) throw new Error('Badge not found');
-  
-  await prisma.badge.update({
-    where: { id: badgeId },
-    data: { enabled: !badge.enabled },
-  });
-  
-  return { enabled: !badge.enabled };
+  try {
+    const isAdmin = await checkAdminAuth();
+    if (!isAdmin) throw new Error('Unauthorized');
+    
+    const badge = await prisma.badge.findUnique({ where: { id: badgeId } });
+    if (!badge) throw new Error('Badge not found');
+    
+    await prisma.badge.update({
+      where: { id: badgeId },
+      data: { enabled: !badge.enabled },
+    });
+    
+    return { enabled: !badge.enabled };
+  } catch (error) {
+    console.error('Toggle badge error:', error);
+    throw new Error(error instanceof Error ? error.message : 'Failed to toggle badge');
+  }
+}
+
+export async function deletePlayer(playerId: string) {
+  try {
+    const isAdmin = await checkAdminAuth();
+    if (!isAdmin) throw new Error('Unauthorized');
+    
+    // Cascade delete: rolls will be deleted automatically due to FK constraints
+    await prisma.player.delete({
+      where: { id: playerId },
+    });
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Delete player error:', error);
+    throw new Error(error instanceof Error ? error.message : 'Failed to delete player');
+  }
 }
 
 export async function getAllBadges() {
@@ -212,4 +234,55 @@ export async function getAllBadges() {
   });
   
   return badges;
+}
+
+export async function createBadge(data: {
+  name: string;
+  code: string;
+  description: string;
+  rarity: string;
+  epValue: number;
+  detectorType: string;
+  detectorValue: string;
+}) {
+  try {
+    const isAdmin = await checkAdminAuth();
+    if (!isAdmin) throw new Error('Unauthorized');
+    
+    // Validate inputs
+    if (!data.name || !data.code || !data.description) {
+      throw new Error('Name, code, and description are required');
+    }
+    
+    if (!['Common', 'Uncommon', 'Rare', 'Epic', 'Anomaly', 'Mythic'].includes(data.rarity)) {
+      throw new Error('Invalid rarity');
+    }
+    
+    if (data.epValue < 0 || data.epValue > 100000) {
+      throw new Error('EP value must be between 0 and 100,000');
+    }
+    
+    // Check if code already exists
+    const existing = await prisma.badge.findUnique({ where: { code: data.code } });
+    if (existing) {
+      throw new Error('Badge code already exists');
+    }
+    
+    // Create badge with detector config stored as JSON
+    const badge = await prisma.badge.create({
+      data: {
+        name: data.name,
+        code: data.code,
+        description: data.description,
+        rarity: data.rarity,
+        epValue: data.epValue,
+        enabled: true,
+      },
+    });
+    
+    return { success: true, badge };
+  } catch (error) {
+    console.error('Create badge error:', error);
+    throw new Error(error instanceof Error ? error.message : 'Failed to create badge');
+  }
 }

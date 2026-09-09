@@ -10,7 +10,9 @@ import {
   getAllBadges,
   toggleBadge,
   deletePlayer,
+  createBadge,
 } from '@/app/admin/actions';
+import { SAFE_DETECTOR_PRESETS } from '@/lib/dynamicBadges';
 
 interface AdminDashboardProps {
   onLogout: () => void;
@@ -24,6 +26,16 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   const [badges, setBadges] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showCreateBadge, setShowCreateBadge] = useState(false);
+  const [newBadge, setNewBadge] = useState({
+    name: '',
+    code: '',
+    description: '',
+    rarity: 'Common',
+    epValue: 100,
+    detectorType: 'exact',
+    detectorValue: '',
+  });
 
   useEffect(() => {
     loadStats();
@@ -117,7 +129,31 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
       await toggleBadge(badgeId);
       await loadBadges();
     } catch (e: any) {
-      alert(e.message);
+      alert(`❌ Error: ${e.message}`);
+    }
+  }
+
+  async function handleDeletePlayer(playerId: string, playerName: string) {
+    if (!confirm(`⚠️ DELETE PLAYER: ${playerName}?\n\nThis will permanently delete:\n• The player account\n• All their rolls\n• All their badge associations\n\nThis action CANNOT be undone.`)) return;
+    
+    // Double confirmation for destructive action
+    const confirmation = prompt(`Type "${playerName}" to confirm deletion:`);
+    if (confirmation !== playerName) {
+      alert('Deletion cancelled - name did not match.');
+      return;
+    }
+    
+    try {
+      await deletePlayer(playerId);
+      alert(`✅ Player "${playerName}" has been permanently deleted.`);
+      // Refresh search results
+      if (searchQuery) {
+        await handleSearch();
+      } else {
+        setPlayers([]);
+      }
+    } catch (e: any) {
+      alert(`❌ Error: ${e.message}`);
     }
   }
 
@@ -315,12 +351,20 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                           <h3 className="text-xl font-bold text-primary">{player.displayName}</h3>
                           <p className="text-xs text-muted font-mono mt-1">{player.id}</p>
                         </div>
-                        <button
-                          onClick={() => handleGrantRoll(player.id, player.displayName)}
-                          className="px-4 py-2 border border-yellow-500 text-yellow-400 text-sm rounded-lg hover:bg-yellow-500/10 transition-smooth"
-                        >
-                          Grant Roll
-                        </button>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => handleGrantRoll(player.id, player.displayName)}
+                            className="px-4 py-2 border border-yellow-500 text-yellow-400 text-sm rounded-lg hover:bg-yellow-500/10 transition-smooth"
+                          >
+                            Grant Roll
+                          </button>
+                          <button
+                            onClick={() => handleDeletePlayer(player.id, player.displayName)}
+                            className="px-4 py-2 border border-red-500 text-red-400 text-sm rounded-lg hover:bg-red-500/10 transition-smooth"
+                          >
+                            Delete
+                          </button>
+                        </div>
                       </div>
                       
                       <div className="grid grid-cols-3 gap-4 text-sm">
@@ -391,7 +435,123 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
 
           {view === 'badges' && (
             <div className="max-w-6xl mx-auto">
-              <h2 className="text-2xl font-bold mb-6 text-red-400">Badge Management</h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-red-400">Badge Management</h2>
+                <button
+                  onClick={() => setShowCreateBadge(!showCreateBadge)}
+                  className="px-6 py-3 border-2 border-lime-400 text-lime-400 font-bold uppercase rounded-lg hover:bg-lime-400 hover:text-void transition-smooth btn-press"
+                >
+                  {showCreateBadge ? 'Cancel' : '+ Create Badge'}
+                </button>
+              </div>
+
+              {showCreateBadge && (
+                <form onSubmit={handleCreateBadge} className="mb-8 rounded-xl border-2 p-6 glass-panel" style={{ borderColor: 'var(--border-base)' }}>
+                  <h3 className="text-lg font-bold text-primary mb-4">Create New Badge</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs text-muted uppercase mb-2">Badge Name</label>
+                      <input
+                        type="text"
+                        value={newBadge.name}
+                        onChange={(e) => setNewBadge({ ...newBadge, name: e.target.value })}
+                        className="w-full px-4 py-2 rounded-lg border text-primary outline-none transition-smooth focus:border-red-400"
+                        style={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border-base)' }}
+                        required
+                        placeholder="e.g., Lucky 13"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-muted uppercase mb-2">Badge Code (unique)</label>
+                      <input
+                        type="text"
+                        value={newBadge.code}
+                        onChange={(e) => setNewBadge({ ...newBadge, code: e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, '_') })}
+                        className="w-full px-4 py-2 rounded-lg border text-primary outline-none transition-smooth focus:border-red-400 font-mono"
+                        style={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border-base)' }}
+                        required
+                        placeholder="e.g., lucky_13"
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-xs text-muted uppercase mb-2">Description</label>
+                      <input
+                        type="text"
+                        value={newBadge.description}
+                        onChange={(e) => setNewBadge({ ...newBadge, description: e.target.value })}
+                        className="w-full px-4 py-2 rounded-lg border text-primary outline-none transition-smooth focus:border-red-400"
+                        style={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border-base)' }}
+                        required
+                        placeholder="e.g., Rolled a multiple of 13"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-muted uppercase mb-2">Rarity</label>
+                      <select
+                        value={newBadge.rarity}
+                        onChange={(e) => setNewBadge({ ...newBadge, rarity: e.target.value })}
+                        className="w-full px-4 py-2 rounded-lg border text-primary outline-none transition-smooth focus:border-red-400"
+                        style={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border-base)' }}
+                      >
+                        <option value="Common">Common</option>
+                        <option value="Uncommon">Uncommon</option>
+                        <option value="Rare">Rare</option>
+                        <option value="Epic">Epic</option>
+                        <option value="Anomaly">Anomaly</option>
+                        <option value="Mythic">Mythic</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-muted uppercase mb-2">EP Value (0-100,000)</label>
+                      <input
+                        type="number"
+                        value={newBadge.epValue}
+                        onChange={(e) => setNewBadge({ ...newBadge, epValue: parseInt(e.target.value) || 0 })}
+                        className="w-full px-4 py-2 rounded-lg border text-primary outline-none transition-smooth focus:border-red-400 font-mono"
+                        style={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border-base)' }}
+                        required
+                        min="0"
+                        max="100000"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-muted uppercase mb-2">Detector Type</label>
+                      <select
+                        value={newBadge.detectorType}
+                        onChange={(e) => setNewBadge({ ...newBadge, detectorType: e.target.value, detectorValue: '' })}
+                        className="w-full px-4 py-2 rounded-lg border text-primary outline-none transition-smooth focus:border-red-400"
+                        style={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border-base)' }}
+                      >
+                        {SAFE_DETECTOR_PRESETS.map(preset => (
+                          <option key={preset.type} value={preset.type}>{preset.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs text-muted uppercase mb-2">
+                        Detector Value {SAFE_DETECTOR_PRESETS.find(p => p.type === newBadge.detectorType)?.example && 
+                          `(e.g., ${SAFE_DETECTOR_PRESETS.find(p => p.type === newBadge.detectorType)?.example})`}
+                      </label>
+                      <input
+                        type="text"
+                        value={newBadge.detectorValue}
+                        onChange={(e) => setNewBadge({ ...newBadge, detectorValue: e.target.value })}
+                        className="w-full px-4 py-2 rounded-lg border text-primary outline-none transition-smooth focus:border-red-400 font-mono"
+                        style={{ backgroundColor: 'var(--bg-panel)', borderColor: 'var(--border-base)' }}
+                        placeholder={SAFE_DETECTOR_PRESETS.find(p => p.type === newBadge.detectorType)?.example || 'Optional'}
+                        disabled={!['exact', 'divisible', 'contains', 'range', 'ends_with', 'starts_with', 'digit_sum'].includes(newBadge.detectorType)}
+                      />
+                      <p className="text-xs text-dim mt-1">{SAFE_DETECTOR_PRESETS.find(p => p.type === newBadge.detectorType)?.description}</p>
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    className="mt-4 px-6 py-3 border-2 border-green-400 text-green-400 font-bold uppercase rounded-lg hover:bg-green-400 hover:text-void transition-smooth btn-press"
+                  >
+                    Create Badge
+                  </button>
+                </form>
+              )}
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {badges.map((badge) => (
