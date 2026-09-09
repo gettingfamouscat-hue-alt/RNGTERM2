@@ -13,9 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "RNGTERM - Daily Lunar Roll",
-  description: "Roll once per day under moonlight. Earn badges, collect entropy points, and climb the leaderboard in this lunar-inspired number game.",
-  keywords: ["rng", "random", "game", "daily", "badges", "leaderboard", "lunar"],
+  title: "RNGTERM - Lunar Roll",
+  description: "Roll anytime under moonlight. Earn badges, collect entropy points, and climb the leaderboard in this lunar-inspired number game.",
+  keywords: ["rng", "random", "game", "badges", "leaderboard", "lunar", "infinite"],
 };
 
 export default function RootLayout({

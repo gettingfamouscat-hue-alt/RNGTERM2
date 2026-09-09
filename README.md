@@ -1,11 +1,11 @@
 # RNGTERM
 
-A polished, terminal-inspired daily random number game where players roll once per UTC day to earn badges and climb the leaderboard.
+A polished, lunar-themed random number game where players can roll infinitely to earn badges and climb the leaderboard.
 
 ## Features
 
 ### Player Game
-- **Daily Roll**: Generate a random number from 0 to 1,000,000 once per UTC day
+- **Infinite Rolling**: Generate random numbers from 0 to 1,000,000 anytime
 - **Badge System**: 41 unique badges with different rarities based on number patterns:
   - Digit patterns (palindromes, repeating digits, sequences)
   - Math properties (primes, perfect squares, Fibonacci numbers)

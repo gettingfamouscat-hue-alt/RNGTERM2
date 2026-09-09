@@ -65,9 +65,6 @@ export default function Home() {
     }
   }
 
-  // No daily limit - always allow rolling
-  const hasRolledToday = false;
-
   return (
     <div className="min-h-screen relative">
       <LunarEntrance />
@@ -134,7 +131,6 @@ export default function Home() {
                       rolling={rolling}
                       result={result}
                       onRoll={handleRoll}
-                      hasRolledToday={hasRolledToday}
                       error={error}
                     />
                   </div>
@@ -191,7 +187,7 @@ export default function Home() {
         {/* Footer */}
         <footer className="glass-panel border-t mt-12" style={{ borderColor: 'var(--border-dim)' }}>
           <div className="container mx-auto px-4 sm:px-6 py-6 text-center text-muted text-xs sm:text-sm space-y-2">
-            <p>Roll once per day under moonlight • Collect badges • Climb the leaderboard</p>
+            <p>Roll anytime under moonlight • Collect badges • Climb the leaderboard</p>
             <p className="text-dim">RNGTERM v1.1 • Lunar Edition</p>
           </div>
         </footer>

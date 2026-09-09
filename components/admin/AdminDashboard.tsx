@@ -673,9 +673,9 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                     </div>
                     
                     <div className="flex items-center justify-between text-sm border-t pt-2 mt-2" style={{ borderColor: 'var(--border-dim)' }}>
-                      <span className="text-muted uppercase text-xs">{badge.rarity}</span>
-                      <span className="text-red-400 font-mono">+{badge.epValue} EP</span>
-                      <span className="text-muted text-xs">{badge._count.rollBadges} earned</span>
+                      <span className="text-muted uppercase text-xs">{badge?.rarity || 'Unknown'}</span>
+                      <span className="text-red-400 font-mono">+{badge?.epValue || 0} EP</span>
+                      <span className="text-muted text-xs">{badge?.timesEarned || 0} earned</span>
                     </div>
                   </div>
                 ))}

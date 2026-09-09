@@ -6,11 +6,10 @@ interface RollAnimationProps {
   rolling: boolean;
   result: { rollNumber: number; totalEP: number; rarity: string } | null;
   onRoll: () => void;
-  hasRolledToday: boolean;
   error: string | null;
 }
 
-export function RollAnimation({ rolling, result, onRoll, hasRolledToday, error }: RollAnimationProps) {
+export function RollAnimation({ rolling, result, onRoll, error }: RollAnimationProps) {
   const [displayNumber, setDisplayNumber] = useState<number | null>(null);
   const [animating, setAnimating] = useState(false);
   const [showResult, setShowResult] = useState(false);
