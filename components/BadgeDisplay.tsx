@@ -22,10 +22,11 @@ export function BadgeDisplay({ badges, totalEP, rarity, rollNumber }: BadgeDispl
 
   useEffect(() => {
     setVisibleBadges([]);
+    // Lunar dust cascade - staggered badge appearance
     badges.forEach((badge, index) => {
       setTimeout(() => {
         setVisibleBadges(prev => [...prev, badge.id]);
-      }, index * 120 + 300);
+      }, index * 150 + 400);
     });
   }, [badges]);
 

@@ -52,29 +52,42 @@ cd rngterm
 npm install
 ```
 
-3. Set up the database
+3. Set up environment variables
+```bash
+cp .env.example .env.local
+# Edit .env.local with your DATABASE_URL (Neon Postgres) and credentials
+```
+
+4. Set up the database
 ```bash
 npx prisma migrate deploy
 npx tsx prisma/seed.ts
 ```
 
-4. Start the development server
+5. Start the development server
 ```bash
 npm run dev
 ```
 
-5. Open your browser to `http://localhost:3000`
+6. Open your browser to `http://localhost:3000`
 
 ## Environment Variables
 
-The app uses the following environment variables (already configured in `.env.local`):
+The app uses the following environment variables:
 
 ```env
-DATABASE_URL="file:./dev.db"
-ADMIN_USERNAME="Damian"
-ADMIN_PASSWORD="9198765432Gg(hello)!"
-SESSION_SECRET="rngterm-super-secret-key-change-in-production-please"
+DATABASE_URL="postgresql://user:password@host/database?sslmode=require"
+ADMIN_USERNAME="your-admin-username"
+ADMIN_PASSWORD="your-secure-password-here"
+SESSION_SECRET="generate-a-secure-random-secret-min-32-chars"
 ```
+
+**For Production (Vercel):**
+- Use a Neon Postgres connection string for `DATABASE_URL`
+- Set secure values for admin credentials
+- Generate a strong random secret for `SESSION_SECRET` (min 32 characters)
+
+See [DEPLOY.md](./DEPLOY.md) for detailed deployment instructions.
 
 ### Admin Access
 
@@ -88,7 +101,7 @@ To access the admin panel:
 
 ## Database
 
-The app uses SQLite for local development. The database file is created at `dev.db` in the project root.
+The app uses PostgreSQL (Neon) for production deployments via Prisma with the Neon serverless adapter. This ensures compatibility with Vercel's serverless environment.
 
 ### Database Schema
 
@@ -101,7 +114,10 @@ The app uses SQLite for local development. The database file is created at `dev.
 ### Resetting the Database
 
 ```bash
-rm dev.db
+# Drop all tables and recreate
+npx prisma migrate reset
+
+# Or manually:
 npx prisma migrate deploy
 npx tsx prisma/seed.ts
 ```

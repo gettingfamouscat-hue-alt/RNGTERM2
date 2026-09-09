@@ -9,6 +9,7 @@ import {
   grantExtraRoll,
   getAllBadges,
   toggleBadge,
+  deletePlayer,
 } from '@/app/admin/actions';
 
 interface AdminDashboardProps {
@@ -93,12 +94,20 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
   }
 
   async function handleGrantRoll(playerId: string, playerName: string) {
-    if (!confirm(`Grant extra roll to ${playerName}?`)) return;
+    if (!confirm(`Grant extra roll to ${playerName}?\n\nThis will delete their today's roll (if any) so they can roll again.`)) return;
     try {
-      await grantExtraRoll(playerId);
-      alert('Extra roll granted!');
+      const result = await grantExtraRoll(playerId);
+      if (result.rollsDeleted > 0) {
+        alert(`✅ Extra roll granted! Deleted ${result.rollsDeleted} roll(s). ${playerName} can now roll again today.`);
+      } else {
+        alert(`✅ Extra roll granted! ${playerName} had not rolled today yet, they can now roll.`);
+      }
+      // Refresh player data
+      if (searchQuery) {
+        await handleSearch();
+      }
     } catch (e: any) {
-      alert(e.message);
+      alert(`❌ Error: ${e.message}`);
     }
   }
 

@@ -7,6 +7,7 @@ import { BadgeDisplay } from '@/components/BadgeDisplay';
 import { Leaderboard } from '@/components/Leaderboard';
 import { History } from '@/components/History';
 import { ProfilePanel } from '@/components/ProfilePanel';
+import { LunarEntrance } from '@/components/LunarEntrance';
 
 export default function Home() {
   const [rolling, setRolling] = useState(false);
@@ -68,26 +69,23 @@ export default function Home() {
     history[0].utcDate === new Date().toISOString().split('T')[0];
 
   return (
-    <div className="min-h-screen bg-void text-primary">
-      {/* Ambient gradient */}
-      <div className="fixed inset-0 bg-gradient-radial from-cyan-500/5 via-transparent to-transparent pointer-events-none" />
-      
+    <div className="min-h-screen relative">
+      <LunarEntrance />
       <div className="relative z-10">
         {/* Header */}
-        <header className="sticky top-0 z-30 backdrop-blur-xl bg-void/80 border-b" style={{ borderColor: 'var(--border-base)' }}>
+        <header className="sticky top-0 z-30 glass-panel">
           <div className="container mx-auto px-4 sm:px-6">
             <div className="flex items-center justify-between h-16">
               <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
-                <span className="text-cyan-400">&gt;</span>{' '}
-                <span className="bg-gradient-to-r from-cyan-400 to-lime-400 bg-clip-text text-transparent">
+                <span className="text-5xl mr-2">🌙</span>
+                <span className="bg-gradient-to-r from-slate-200 via-blue-200 to-slate-200 bg-clip-text text-transparent">
                   RNGTERM
                 </span>
               </h1>
               {player && (
                 <button
                   onClick={() => setShowProfile(true)}
-                  className="px-3 sm:px-4 py-2 text-sm rounded-lg transition-smooth border hover:bg-panel-hover"
-                  style={{ borderColor: 'var(--border-base)' }}
+                  className="px-3 sm:px-4 py-2 text-sm rounded-lg transition-lunar glass-panel hover:bg-panel-hover text-silver"
                 >
                   <span className="hidden sm:inline">{player.displayName}</span>
                   <span className="sm:hidden">Profile</span>
@@ -98,18 +96,19 @@ export default function Home() {
         </header>
 
         {/* Navigation */}
-        <nav className="sticky top-16 z-20 backdrop-blur-xl bg-void/60 border-b" style={{ borderColor: 'var(--border-dim)' }}>
+        <nav className="sticky top-16 z-20 glass-panel border-b" style={{ borderColor: 'var(--border-dim)' }}>
           <div className="container mx-auto px-4 sm:px-6">
             <div className="flex gap-1 overflow-x-auto scrollbar-hide">
               {(['game', 'history', 'leaderboard'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setView(tab)}
-                  className={`px-4 sm:px-6 py-3 text-xs sm:text-sm font-medium uppercase tracking-wider whitespace-nowrap transition-smooth border-b-2 ${
+                  className={`px-4 sm:px-6 py-3 text-xs sm:text-sm font-medium uppercase tracking-wider whitespace-nowrap transition-lunar border-b-2 ${
                     view === tab
-                      ? 'text-cyan-400 border-cyan-400'
-                      : 'text-muted border-transparent hover:text-primary'
+                      ? 'text-moon border-blue-300'
+                      : 'text-muted border-transparent hover:text-silver'
                   }`}
+                  style={{ color: view === tab ? 'var(--accent-moon)' : undefined }}
                 >
                   {tab}
                 </button>
@@ -130,7 +129,7 @@ export default function Home() {
               {view === 'game' && (
                 <div className="max-w-4xl mx-auto space-y-6 sm:space-y-8">
                   {/* Roll Section - Hero */}
-                  <div className="scanlines">
+                  <div>
                     <RollAnimation
                       rolling={rolling}
                       result={result}
@@ -153,8 +152,8 @@ export default function Home() {
                   {/* Today's Top Rolls */}
                   {leaderboard.length > 0 && (
                     <div className="mt-12">
-                      <h2 className="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2 text-muted">
-                        <span className="text-cyan-400">$</span> Today's Top Rolls
+                      <h2 className="text-lg sm:text-xl font-bold mb-4 flex items-center gap-2 text-silver">
+                        <span className="text-2xl">✨</span> Today's Top Rolls
                       </h2>
                       <Leaderboard rolls={leaderboard} />
                     </div>
@@ -164,9 +163,9 @@ export default function Home() {
 
               {view === 'history' && (
                 <div className="max-w-4xl mx-auto">
-                  <h2 className="text-2xl sm:text-3xl font-bold mb-6 flex items-center gap-2">
-                    <span className="text-cyan-400">$</span>{' '}
-                    <span className="bg-gradient-to-r from-cyan-400 to-lime-400 bg-clip-text text-transparent">
+                  <h2 className="text-2xl sm:text-3xl font-bold mb-6 flex items-center gap-3">
+                    <span className="text-3xl">📜</span>
+                    <span className="bg-gradient-to-r from-slate-200 via-blue-200 to-slate-200 bg-clip-text text-transparent">
                       Your History
                     </span>
                   </h2>
@@ -176,9 +175,9 @@ export default function Home() {
 
               {view === 'leaderboard' && (
                 <div className="max-w-4xl mx-auto">
-                  <h2 className="text-2xl sm:text-3xl font-bold mb-6 flex items-center gap-2">
-                    <span className="text-cyan-400">$</span>{' '}
-                    <span className="bg-gradient-to-r from-cyan-400 to-lime-400 bg-clip-text text-transparent">
+                  <h2 className="text-2xl sm:text-3xl font-bold mb-6 flex items-center gap-3">
+                    <span className="text-3xl">🏆</span>
+                    <span className="bg-gradient-to-r from-slate-200 via-blue-200 to-slate-200 bg-clip-text text-transparent">
                       Today's Leaderboard
                     </span>
                   </h2>
@@ -190,10 +189,10 @@ export default function Home() {
         </main>
 
         {/* Footer */}
-        <footer className="border-t backdrop-blur-xl bg-void/80 mt-12" style={{ borderColor: 'var(--border-dim)' }}>
+        <footer className="glass-panel border-t mt-12" style={{ borderColor: 'var(--border-dim)' }}>
           <div className="container mx-auto px-4 sm:px-6 py-6 text-center text-muted text-xs sm:text-sm space-y-2">
-            <p>Roll once per day (UTC) • Collect badges • Climb the leaderboard</p>
-            <p className="text-dim">RNGTERM v1.0 • Powered by entropy</p>
+            <p>Roll once per day under moonlight • Collect badges • Climb the leaderboard</p>
+            <p className="text-dim">RNGTERM v1.1 • Lunar Edition</p>
           </div>
         </footer>
       </div>

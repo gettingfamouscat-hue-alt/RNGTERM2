@@ -24,8 +24,13 @@ export async function adminLogin(username: string, password: string) {
 }
 
 export async function adminLogout() {
-  const session = await getSession();
-  session.destroy();
+  try {
+    const session = await getSession();
+    session.isAdmin = false;
+    await session.destroy();
+  } catch (error) {
+    console.error('Logout error:', error);
+  }
   redirect('/admin');
 }
 
@@ -157,20 +162,25 @@ export async function toggleMaintenance() {
 }
 
 export async function grantExtraRoll(playerId: string) {
-  const isAdmin = await checkAdminAuth();
-  if (!isAdmin) throw new Error('Unauthorized');
-  
-  const today = new Date().toISOString().split('T')[0];
-  
-  // Delete today's roll if exists
-  await prisma.roll.deleteMany({
-    where: {
-      playerId,
-      utcDate: today,
-    },
-  });
-  
-  return { success: true };
+  try {
+    const isAdmin = await checkAdminAuth();
+    if (!isAdmin) throw new Error('Unauthorized');
+    
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Delete today's roll if exists (allows player to roll again)
+    const deleted = await prisma.roll.deleteMany({
+      where: {
+        playerId,
+        utcDate: today,
+      },
+    });
+    
+    return { success: true, rollsDeleted: deleted.count };
+  } catch (error) {
+    console.error('Grant roll error:', error);
+    throw new Error(error instanceof Error ? error.message : 'Failed to grant extra roll');
+  }
 }
 
 export async function toggleBadge(badgeId: string) {

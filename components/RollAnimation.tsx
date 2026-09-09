@@ -20,20 +20,26 @@ export function RollAnimation({ rolling, result, onRoll, hasRolledToday, error }
       setAnimating(true);
       setShowResult(false);
       
-      // Fast scramble phase
+      // Lunar-themed roll sequence
       let count = 0;
+      const phases = ['🌑', '🌒', '🌓', '🌔', '🌕', '🌖', '🌗', '🌘'];
+      let phaseIndex = 0;
+      
       const interval = setInterval(() => {
         setDisplayNumber(Math.floor(Math.random() * 1000001));
+        phaseIndex = (phaseIndex + 1) % phases.length;
         count++;
-        if (count > 24) {
+        
+        if (count > 25) {
           clearInterval(interval);
+          // Final lunar glow
           setDisplayNumber(result.rollNumber);
           setTimeout(() => {
             setAnimating(false);
             setShowResult(true);
-          }, 300);
+          }, 500);
         }
-      }, 40);
+      }, 60);
       
       return () => clearInterval(interval);
     }
@@ -45,60 +51,79 @@ export function RollAnimation({ rolling, result, onRoll, hasRolledToday, error }
       Anomaly: 'text-rarity-anomaly glow-anomaly',
       Epic: 'text-rarity-epic glow-epic',
       Rare: 'text-rarity-rare glow-rare',
-      Uncommon: 'text-rarity-uncommon',
+      Uncommon: 'text-rarity-uncommon glow-uncommon',
       Common: 'text-rarity-common',
       Trash: 'text-rarity-trash',
     };
-    return classes[rarity] || 'text-primary';
+    return classes[rarity] || 'text-silver';
   };
 
   return (
     <div className="relative">
+      {/* Moonlight glow behind card - intensifies during roll */}
+      <div className={`absolute inset-0 bg-gradient-radial from-blue-500/10 via-transparent to-transparent blur-3xl transition-all duration-500 ${
+        animating ? 'opacity-100 scale-110' : 'opacity-60'
+      }`} />
+      
+      {/* Orbiting dust particles during roll */}
+      {animating && (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {[...Array(12)].map((_, i) => (
+            <div
+              key={i}
+              className="absolute w-1 h-1 bg-blue-200/60 rounded-full animate-orbit-dust"
+              style={{
+                left: '50%',
+                top: '50%',
+                animationDelay: `${i * 0.1}s`,
+                animationDuration: `${1.5 + Math.random()}s`,
+              }}
+            />
+          ))}
+        </div>
+      )}
+      
       <div 
-        className="rounded-2xl p-6 sm:p-8 lg:p-12 relative overflow-hidden border backdrop-blur-sm transition-smooth"
-        style={{ 
-          backgroundColor: 'var(--bg-panel)',
-          borderColor: 'var(--border-base)',
-        }}
+        className="glass-panel rounded-3xl p-6 sm:p-12 relative overflow-hidden transition-lunar"
       >
-        {/* Corner accents */}
-        <div className="absolute top-0 left-0 w-12 h-12 border-t-2 border-l-2 border-cyan-400/50" />
-        <div className="absolute top-0 right-0 w-12 h-12 border-t-2 border-r-2 border-cyan-400/50" />
-        <div className="absolute bottom-0 left-0 w-12 h-12 border-b-2 border-l-2 border-cyan-400/50" />
-        <div className="absolute bottom-0 right-0 w-12 h-12 border-b-2 border-r-2 border-cyan-400/50" />
+        {/* Soft corner accents */}
+        <div className="absolute top-0 left-0 w-16 h-16 border-t border-l opacity-30" style={{ borderColor: 'var(--accent-moon)' }} />
+        <div className="absolute top-0 right-0 w-16 h-16 border-t border-r opacity-30" style={{ borderColor: 'var(--accent-moon)' }} />
+        <div className="absolute bottom-0 left-0 w-16 h-16 border-b border-l opacity-30" style={{ borderColor: 'var(--accent-moon)' }} />
+        <div className="absolute bottom-0 right-0 w-16 h-16 border-b border-r opacity-30" style={{ borderColor: 'var(--accent-moon)' }} />
         
-        <div className="text-center space-y-6 sm:space-y-8">
+        <div className="text-center space-y-8">
           {/* Title */}
           <div>
-            <h2 className="text-sm sm:text-base font-medium uppercase tracking-widest text-cyan-400 mb-1">
-              Daily Roll Terminal
+            <h2 className="text-base sm:text-lg font-medium tracking-widest mb-2" style={{ color: 'var(--text-silver)' }}>
+              Daily Lunar Roll
             </h2>
-            <p className="text-xs text-muted">0 → 1,000,000</p>
+            <p className="text-xs" style={{ color: 'var(--text-dim)' }}>0 → 1,000,000</p>
           </div>
           
           {/* Number Display */}
-          <div className="py-8 sm:py-12">
+          <div className="py-8 sm:py-16">
             {displayNumber !== null ? (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div 
                   className={`text-5xl sm:text-7xl lg:text-8xl font-bold font-mono tracking-tight transition-all duration-300 ${
-                    animating ? 'blur-sm opacity-50 scale-95' : `number-lock ${getRarityClasses(result?.rarity || '')}`
+                    animating ? 'blur-sm opacity-40 scale-95' : `number-settle ${getRarityClasses(result?.rarity || '')}`
                   }`}
                 >
                   {displayNumber.toLocaleString()}
                 </div>
                 
                 {result && showResult && (
-                  <div className="space-y-2 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-700">
                     <div className={`text-2xl sm:text-3xl font-bold uppercase tracking-wider ${getRarityClasses(result.rarity)}`}>
                       {result.rarity}
                     </div>
                     {result.totalEP > 0 ? (
-                      <div className="text-lg sm:text-xl font-mono ep-shimmer font-bold">
+                      <div className="text-xl sm:text-2xl font-mono lunar-shimmer font-bold">
                         +{result.totalEP.toLocaleString()} EP
                       </div>
                     ) : (
-                      <div className="text-lg text-muted">
+                      <div className="text-lg" style={{ color: 'var(--text-muted)' }}>
                         No badges earned
                       </div>
                     )}
@@ -106,7 +131,7 @@ export function RollAnimation({ rolling, result, onRoll, hasRolledToday, error }
                 )}
               </div>
             ) : (
-              <div className="text-7xl sm:text-8xl text-muted/30 font-mono">
+              <div className="text-7xl sm:text-8xl font-mono" style={{ color: 'var(--text-dim)' }}>
                 ??????
               </div>
             )}
@@ -115,10 +140,9 @@ export function RollAnimation({ rolling, result, onRoll, hasRolledToday, error }
           {/* Error Message */}
           {error && (
             <div 
-              className="p-4 rounded-xl border text-sm"
+              className="p-4 rounded-xl border text-sm glass-panel"
               style={{
-                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                borderColor: '#ef4444',
+                borderColor: '#f87171',
                 color: '#fca5a5',
               }}
             >
@@ -132,24 +156,29 @@ export function RollAnimation({ rolling, result, onRoll, hasRolledToday, error }
               onClick={onRoll}
               disabled={rolling || hasRolledToday}
               className={`
-                w-full sm:w-auto px-8 sm:px-16 py-4 sm:py-5 
+                w-full sm:w-auto px-12 sm:px-20 py-4 sm:py-5 
                 text-base sm:text-lg font-bold uppercase tracking-wider
-                rounded-xl border-2 transition-smooth btn-press
+                rounded-xl border-2 transition-lunar btn-lunar
                 ${hasRolledToday
-                  ? 'border-dim text-dim cursor-not-allowed opacity-50'
+                  ? 'opacity-40 cursor-not-allowed'
                   : rolling
-                  ? 'border-cyan-400 text-cyan-400 animate-pulse'
-                  : 'border-cyan-400 text-cyan-400 hover:bg-cyan-400 hover:text-void hover:shadow-[0_0_40px_rgba(34,211,238,0.4)]'
+                  ? 'animate-pulse'
+                  : 'hover:shadow-[0_0_30px_rgba(219,234,254,0.3)]'
                 }
               `}
+              style={{
+                borderColor: hasRolledToday ? 'var(--border-dim)' : 'var(--accent-moon)',
+                color: hasRolledToday ? 'var(--text-dim)' : 'var(--accent-moon)',
+                backgroundColor: hasRolledToday ? 'transparent' : rolling ? 'rgba(219, 234, 254, 0.05)' : 'transparent',
+              }}
             >
-              {rolling && <span className="inline-block animate-spin mr-2">⟳</span>}
+              {rolling && <span className="inline-block animate-spin mr-2">◐</span>}
               {rolling ? 'Rolling...' : hasRolledToday ? 'Rolled Today' : 'Roll Now'}
             </button>
             
             {hasRolledToday && (
-              <p className="text-xs sm:text-sm text-muted">
-                Next roll in <span className="text-cyan-400 font-mono">{getTimeUntilNextRoll()}</span>
+              <p className="text-xs sm:text-sm" style={{ color: 'var(--text-muted)' }}>
+                Next roll in <span className="font-mono" style={{ color: 'var(--accent-blue)' }}>{getTimeUntilNextRoll()}</span>
               </p>
             )}
           </div>

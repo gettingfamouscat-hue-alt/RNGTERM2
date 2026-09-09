@@ -1,8 +1,8 @@
-import { getIronSession } from 'iron-session';
+import { getIronSession, IronSession } from 'iron-session';
 import { cookies } from 'next/headers';
 
 export interface SessionData {
-  isAdmin: boolean;
+  isAdmin?: boolean;
 }
 
 const sessionOptions = {
@@ -11,7 +11,9 @@ const sessionOptions = {
   cookieOptions: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
+    sameSite: 'lax' as const,
     maxAge: 60 * 60 * 24, // 24 hours
+    path: '/',
   },
 };
 
