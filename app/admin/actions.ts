@@ -6,9 +6,13 @@ import { redirect } from 'next/navigation';
 
 export async function adminLogin(username: string, password: string) {
   try {
-    const correctUsername = process.env.ADMIN_USERNAME || 'Damian';
-    const correctPassword = process.env.ADMIN_PASSWORD || '9198765432Gg(hello)!';
-    
+    const correctUsername = process.env.ADMIN_USERNAME;
+    const correctPassword = process.env.ADMIN_PASSWORD;
+
+    if (!correctUsername || !correctPassword) {
+      return { success: false, error: 'Admin credentials are not configured' };
+    }
+
     if (username === correctUsername && password === correctPassword) {
       const session = await getSession();
       session.isAdmin = true;

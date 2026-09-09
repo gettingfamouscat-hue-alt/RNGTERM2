@@ -94,8 +94,7 @@ See [DEPLOY.md](./DEPLOY.md) for detailed deployment instructions.
 To access the admin panel:
 1. Navigate to `/admin` (not linked in public UI)
 2. Log in with:
-   - **Username**: `Damian`
-   - **Password**: `9198765432Gg(hello)!`
+   - Set `ADMIN_USERNAME` and `ADMIN_PASSWORD` in `.env.local` (see `.env.example`)
 
 **IMPORTANT**: Change these credentials in production by updating the `.env` file!
 

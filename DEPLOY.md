@@ -18,8 +18,8 @@ Set these in your Vercel project settings:
 DATABASE_URL="postgresql://username:password@host/database?sslmode=require"
 
 # Admin credentials
-ADMIN_USERNAME="Damian"
-ADMIN_PASSWORD="9198765432Gg(hello)!"
+ADMIN_USERNAME="your-admin-username"
+ADMIN_PASSWORD="your-admin-password"
 
 # Session secret (generate a secure random string, min 32 chars)
 SESSION_SECRET="your-secure-random-secret-min-32-characters-long"

@@ -6,7 +6,16 @@ export interface SessionData {
 }
 
 const sessionOptions = {
-  password: process.env.SESSION_SECRET || 'rngterm-super-secret-key-change-in-production-please',
+  password: (() => {
+    const secret = process.env.SESSION_SECRET;
+    if (!secret) {
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error('SESSION_SECRET must be set in production');
+      }
+      return 'dev-only-session-secret-change-me';
+    }
+    return secret;
+  })(),
   cookieName: 'rngterm-admin-session',
   cookieOptions: {
     secure: process.env.NODE_ENV === 'production',
