@@ -48,9 +48,11 @@ export async function detectBadgesForRoll(rollNumber: number) {
       if (badge.detectorType && badge.detectorValue !== null) {
         const detector = DETECTOR_FUNCTIONS[badge.detectorType as keyof typeof DETECTOR_FUNCTIONS];
         if (detector) {
-          const matches = typeof detector === 'function' && detector.length === 1
-            ? detector(rollNumber)
-            : detector(rollNumber, badge.detectorValue);
+          // Normalize arity: 1-arg detectors ignore value; 2-arg detectors use detectorValue
+          const matches = (detector as (n: number, value?: string | null) => boolean)(
+            rollNumber,
+            badge.detectorValue,
+          );
           
           if (matches) {
             earnedBadges.push(badge);

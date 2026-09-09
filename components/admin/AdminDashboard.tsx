@@ -157,6 +157,35 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     }
   }
 
+  async function handleCreateBadge(e: React.FormEvent) {
+    e.preventDefault();
+    try {
+      await createBadge({
+        name: newBadge.name,
+        code: newBadge.code,
+        description: newBadge.description,
+        rarity: newBadge.rarity,
+        epValue: newBadge.epValue,
+        detectorType: newBadge.detectorType,
+        detectorValue: newBadge.detectorValue || "",
+      });
+      alert(`✅ Badge "${newBadge.name}" created.`);
+      setShowCreateBadge(false);
+      setNewBadge({
+        name: '',
+        code: '',
+        description: '',
+        rarity: 'Common',
+        epValue: 100,
+        detectorType: 'exact',
+        detectorValue: '',
+      });
+      await loadBadges();
+    } catch (err: any) {
+      alert(`❌ Error: ${err.message}`);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-void admin-theme">
       {/* Ambient gradient */}
