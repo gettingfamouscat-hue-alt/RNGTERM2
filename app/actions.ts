@@ -165,6 +165,7 @@ export async function getTodayLeaderboard() {
   return topRolls
     .filter(roll => !/^Player\d+$/.test(roll.player.displayName))
     .map(roll => ({
+      id: roll.id,
       displayName: roll.player.displayName,
       rollNumber: roll.rollNumber,
       totalEP: roll.totalEP,
@@ -179,16 +180,17 @@ export async function getTodayLeaderboard() {
 export async function getAllTimeLeaderboard() {
   const topPlayers = await prisma.player.findMany({
     orderBy: { totalEP: 'desc' },
-    take: 10,
-    include: {
-      rolls: {
-        orderBy: { rollDate: 'desc' },
-        take: 1,
-      },
-    },
+    take: 100,
   });
   
-  return topPlayers;
+  // Filter out guest players (Player + digits) from leaderboard
+  return topPlayers
+    .filter(player => !/^Player\d+$/.test(player.displayName))
+    .map(player => ({
+      id: player.id,
+      displayName: player.displayName,
+      totalEP: player.totalEP,
+    }));
 }
 
 export async function updateDisplayName(name: string) {

@@ -83,7 +83,7 @@ export function Leaderboard({ rolls }: LeaderboardProps) {
                   {getRankBadge(index)}
                 </td>
                 <td className="px-4 py-3 text-primary">
-                  {roll.player?.displayName || 'Unknown'}
+                  {roll.displayName || 'Unknown'}
                 </td>
                 <td className="px-4 py-3 text-right font-mono text-primary">
                   {roll.rollNumber.toLocaleString()}
@@ -117,7 +117,7 @@ export function Leaderboard({ rolls }: LeaderboardProps) {
             </div>
             
             <div className="text-primary font-medium">
-              {roll.player?.displayName || 'Unknown'}
+              {roll.displayName || 'Unknown'}
             </div>
             
             <div className="text-2xl font-mono font-bold text-primary">

@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { adminLogin, checkAdminAuth, adminLogout } from './actions';
 import { AdminDashboard } from '@/components/admin/AdminDashboard';
 
+export const dynamic = 'force-dynamic';
+
 export default function AdminPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
