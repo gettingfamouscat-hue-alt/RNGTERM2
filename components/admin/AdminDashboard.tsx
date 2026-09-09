@@ -69,9 +69,11 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     setLoading(true);
     try {
       const results = await searchPlayers(searchQuery);
-      setPlayers(results);
+      setPlayers(Array.isArray(results) ? results : []);
     } catch (e) {
       console.error(e);
+      alert('Search failed. Please try again.');
+      setPlayers([]);
     } finally {
       setLoading(false);
     }
@@ -81,9 +83,11 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     setLoading(true);
     try {
       const data = await getAllRolls(0);
-      setRolls(data.rolls);
+      setRolls(Array.isArray(data?.rolls) ? data.rolls : []);
     } catch (e) {
       console.error(e);
+      alert('Failed to load rolls. Please try again.');
+      setRolls([]);
     } finally {
       setLoading(false);
     }
@@ -93,9 +97,11 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     setLoading(true);
     try {
       const data = await getAllBadges();
-      setBadges(data);
+      setBadges(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error(e);
+      alert('Failed to load badges. Please try again.');
+      setBadges([]);
     } finally {
       setLoading(false);
     }
@@ -271,7 +277,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
         <nav className="sticky top-16 z-20 backdrop-blur-xl bg-void/60 border-b" style={{ borderColor: 'var(--border-dim)' }}>
           <div className="container mx-auto px-4 sm:px-6">
             <div className="flex gap-1 overflow-x-auto scrollbar-hide">
-              {(['dashboard', 'players', 'rolls', 'badges'] as const).map((tab) => (
+              {(['dashboard', 'players', 'rolls', 'badges', 'autoroll'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => {
@@ -284,7 +290,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                       : 'text-muted border-transparent hover:text-primary'
                   }`}
                 >
-                  {tab}
+                  {tab === 'autoroll' ? 'Auto Roll' : tab}
                 </button>
               ))}
             </div>
@@ -419,7 +425,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
                 </button>
               </div>
 
-              {players.length > 0 && (
+              {Array.isArray(players) && players.length > 0 && (
                 <div className="space-y-4">
                   {players.map((player) => (
                     <div 
@@ -638,7 +644,7 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
               )}
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {badges.map((badge) => (
+                {Array.isArray(badges) && badges.map((badge) => (
                   <div
                     key={badge.id}
                     className={`rounded-xl border-2 p-4 transition-all ${

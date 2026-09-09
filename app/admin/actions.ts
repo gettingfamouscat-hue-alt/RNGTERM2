@@ -192,23 +192,36 @@ export async function getAllBadges() {
   const isAdmin = await checkAdminAuth();
   if (!isAdmin) throw new Error('Unauthorized');
   
-  const badges = await prisma.badge.findMany({
-    orderBy: { name: 'asc' },
-  });
-  
-  const badgesWithCount = await Promise.all(
-    badges.map(async (badge) => {
-      const count = await prisma.rollBadge.count({
-        where: { badgeId: badge.id },
-      });
-      return {
-        ...badge,
-        timesEarned: count,
-      };
-    })
-  );
-  
-  return badgesWithCount;
+  try {
+    const badges = await prisma.badge.findMany({
+      orderBy: { name: 'asc' },
+    });
+    
+    const badgesWithCount = await Promise.all(
+      badges.map(async (badge) => {
+        try {
+          const count = await prisma.rollBadge.count({
+            where: { badgeId: badge.id },
+          });
+          return {
+            ...badge,
+            timesEarned: count || 0,
+          };
+        } catch (error) {
+          console.error(`Error counting badges for ${badge.id}:`, error);
+          return {
+            ...badge,
+            timesEarned: 0,
+          };
+        }
+      })
+    );
+    
+    return badgesWithCount;
+  } catch (error) {
+    console.error('getAllBadges error:', error);
+    return [];
+  }
 }
 
 export async function toggleBadge(badgeId: string) {

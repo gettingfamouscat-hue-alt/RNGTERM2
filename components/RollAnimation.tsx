@@ -96,7 +96,7 @@ export function RollAnimation({ rolling, result, onRoll, hasRolledToday, error }
           {/* Title */}
           <div>
             <h2 className="text-base sm:text-lg font-medium tracking-widest mb-2" style={{ color: 'var(--text-silver)' }}>
-              Daily Lunar Roll
+              Lunar Roll
             </h2>
             <p className="text-xs" style={{ color: 'var(--text-dim)' }}>0 → 1,000,000</p>
           </div>
@@ -131,72 +131,79 @@ export function RollAnimation({ rolling, result, onRoll, hasRolledToday, error }
                 )}
               </div>
             ) : (
-              <div className="text-7xl sm:text-8xl font-mono" style={{ color: 'var(--text-dim)' }}>
-                ??????
+              <div className="text-5xl sm:text-7xl lg:text-8xl font-bold font-mono tracking-tight" style={{ color: 'var(--text-muted)' }}>
+                ???????
               </div>
             )}
           </div>
           
-          {/* Error Message */}
-          {error && (
-            <div 
-              className="p-4 rounded-xl border text-sm glass-panel"
-              style={{
-                borderColor: '#f87171',
-                color: '#fca5a5',
-              }}
-            >
-              {error}
-            </div>
-          )}
-          
           {/* Roll Button */}
-          <div className="space-y-4">
+          <button
+            onClick={onRoll}
+            disabled={rolling}
+            className={`relative w-full py-6 px-8 rounded-2xl text-xl font-bold uppercase tracking-wider transition-lunar overflow-hidden ${
+              rolling
+                ? 'bg-cyan-500/20 text-cyan-300'
+                : 'bg-gradient-to-br from-cyan-500/30 to-blue-500/30 text-cyan-300 hover:from-cyan-500/40 hover:to-blue-500/40 shadow-lg shadow-cyan-500/20'
+            }`}
+          >
+            {rolling ? (
+              <span className="animate-pulse">Rolling...</span>
+            ) : (
+              'Roll the Moon'
+            )}
+          </button>
+
+          {/* Desktop Button */}
+          <div className="hidden sm:flex justify-center">
             <button
               onClick={onRoll}
-              disabled={rolling || hasRolledToday}
+              disabled={rolling}
               className={`
-                w-full sm:w-auto px-12 sm:px-20 py-4 sm:py-5 
-                text-base sm:text-lg font-bold uppercase tracking-wider
-                rounded-xl border-2 transition-lunar btn-lunar
-                ${hasRolledToday
-                  ? 'opacity-40 cursor-not-allowed'
-                  : rolling
+                px-8 py-4 rounded-xl text-lg font-bold uppercase tracking-wider border-2 transition-lunar
+                ${rolling
                   ? 'animate-pulse'
                   : 'hover:shadow-[0_0_30px_rgba(219,234,254,0.3)]'
                 }
               `}
               style={{
-                borderColor: hasRolledToday ? 'var(--border-dim)' : 'var(--accent-moon)',
-                color: hasRolledToday ? 'var(--text-dim)' : 'var(--accent-moon)',
-                backgroundColor: hasRolledToday ? 'transparent' : rolling ? 'rgba(219, 234, 254, 0.05)' : 'transparent',
+                borderColor: 'var(--accent-moon)',
+                color: 'var(--accent-moon)',
+                backgroundColor: rolling ? 'rgba(219, 234, 254, 0.05)' : 'transparent',
               }}
             >
               {rolling && <span className="inline-block animate-spin mr-2">◐</span>}
-              {rolling ? 'Rolling...' : hasRolledToday ? 'Rolled Today' : 'Roll Now'}
+              {rolling ? 'Rolling...' : 'Roll Now'}
             </button>
-            
-            {hasRolledToday && (
-              <p className="text-xs sm:text-sm" style={{ color: 'var(--text-muted)' }}>
-                Next roll in <span className="font-mono" style={{ color: 'var(--accent-blue)' }}>{getTimeUntilNextRoll()}</span>
-              </p>
-            )}
           </div>
+
+          {/* Mobile Button */}
+          <div className="flex sm:hidden flex-col items-center gap-3">
+            <button
+              onClick={onRoll}
+              disabled={rolling}
+              className="w-full py-4 px-6 rounded-xl text-lg font-bold uppercase tracking-wider border-2 transition-lunar"
+              style={{
+                borderColor: 'var(--accent-moon)',
+                color: 'var(--accent-moon)',
+                backgroundColor: rolling ? 'rgba(219, 234, 254, 0.05)' : 'transparent',
+              }}
+            >
+              {rolling && <span className="inline-block animate-spin mr-2">◐</span>}
+              {rolling ? 'Rolling...' : 'Roll Now'}
+            </button>
+          </div>
+
+          {/* Info Text */}
+          {error ? (
+            <p className="text-red-400 text-sm text-center">{error}</p>
+          ) : (
+            <p className="text-xs text-center" style={{ color: 'var(--text-dim)' }}>
+              {rolling ? 'Rolling...' : 'Roll anytime'}
+            </p>
+          )}
         </div>
       </div>
     </div>
   );
-}
-
-function getTimeUntilNextRoll() {
-  const now = new Date();
-  const tomorrow = new Date(now);
-  tomorrow.setUTCDate(tomorrow.getUTCDate() + 1);
-  tomorrow.setUTCHours(0, 0, 0, 0);
-  
-  const diff = tomorrow.getTime() - now.getTime();
-  const hours = Math.floor(diff / (1000 * 60 * 60));
-  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  
-  return `${hours}h ${minutes}m`;
 }
