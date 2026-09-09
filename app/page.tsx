@@ -65,8 +65,8 @@ export default function Home() {
     }
   }
 
-  const hasRolledToday = history.length > 0 && 
-    history[0].utcDate === new Date().toISOString().split('T')[0];
+  // No daily limit - always allow rolling
+  const hasRolledToday = false;
 
   return (
     <div className="min-h-screen relative">

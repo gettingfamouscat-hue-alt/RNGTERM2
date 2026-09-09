@@ -42,20 +42,9 @@ export async function performRoll() {
     const player = await getOrCreatePlayer();
     if (!player) throw new Error('Player not found');
     
-    // Check if player has rolled today (UTC)
+    // No daily limit - players can roll infinitely
     const nowUtc = new Date();
     const utcDate = nowUtc.toISOString().split('T')[0];
-    
-    const todayRoll = await prisma.roll.findFirst({
-      where: {
-        playerId: player.id,
-        utcDate,
-      },
-    });
-    
-    if (todayRoll) {
-      throw new Error('You have already rolled today. Come back tomorrow!');
-    }
     
     // Generate random number
     const rollNumber = randomInt(0, 1000001); // 0 to 1,000,000 inclusive
@@ -147,7 +136,9 @@ export async function getTodayLeaderboard() {
   const nowUtc = new Date();
   const utcDate = nowUtc.toISOString().split('T')[0];
   
-  const topRolls = await prisma.roll.findMany({
+  // With infinite rolls: show each player's BEST roll today (highest EP)
+  // Group by player, take max EP roll per player for today
+  const allRollsToday = await prisma.roll.findMany({
     where: { utcDate },
     include: {
       player: true,
@@ -158,8 +149,20 @@ export async function getTodayLeaderboard() {
       },
     },
     orderBy: { totalEP: 'desc' },
-    take: 100,
   });
+  
+  // Get best roll per player (first occurrence after sorting by EP desc)
+  const playerBestRolls = new Map();
+  for (const roll of allRollsToday) {
+    if (!playerBestRolls.has(roll.player.id)) {
+      playerBestRolls.set(roll.player.id, roll);
+    }
+  }
+  
+  // Convert to array, filter guests, take top 100
+  const topRolls = Array.from(playerBestRolls.values())
+    .sort((a, b) => b.totalEP - a.totalEP)
+    .slice(0, 100);
   
   // Filter out guest players (Player + digits) from leaderboard
   return topRolls
@@ -170,7 +173,7 @@ export async function getTodayLeaderboard() {
       rollNumber: roll.rollNumber,
       totalEP: roll.totalEP,
       rarity: roll.rarity,
-      badges: roll.badges.map(rb => ({
+      badges: roll.badges.map((rb: any) => ({
         name: rb.badge.name,
         rarity: rb.badge.rarity,
       })),

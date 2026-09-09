@@ -115,9 +115,9 @@ export function AdminDashboard({ onLogout }: AdminDashboardProps) {
     try {
       const result = await grantExtraRoll(playerId);
       if (result.rollsDeleted > 0) {
-        alert(`✅ Extra roll granted! Deleted ${result.rollsDeleted} roll(s). ${playerName} can now roll again today.`);
+        alert(`✅ Deleted ${result.rollsDeleted} roll(s) for ${playerName}. Note: Players can now roll infinitely.`);
       } else {
-        alert(`✅ Extra roll granted! ${playerName} had not rolled today yet, they can now roll.`);
+        alert(`ℹ️ ${playerName} had no rolls today. Note: Players can now roll infinitely.`);
       }
       // Refresh player data
       if (searchQuery) {
