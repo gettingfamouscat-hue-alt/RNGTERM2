@@ -5,17 +5,22 @@ import { getSession } from '@/lib/session';
 import { redirect } from 'next/navigation';
 
 export async function adminLogin(username: string, password: string) {
-  const correctUsername = process.env.ADMIN_USERNAME || 'Damian';
-  const correctPassword = process.env.ADMIN_PASSWORD || '9198765432Gg(hello)!';
-  
-  if (username === correctUsername && password === correctPassword) {
-    const session = await getSession();
-    session.isAdmin = true;
-    await session.save();
-    return { success: true };
+  try {
+    const correctUsername = process.env.ADMIN_USERNAME || 'Damian';
+    const correctPassword = process.env.ADMIN_PASSWORD || '9198765432Gg(hello)!';
+    
+    if (username === correctUsername && password === correctPassword) {
+      const session = await getSession();
+      session.isAdmin = true;
+      await session.save();
+      return { success: true };
+    }
+    
+    return { success: false, error: 'Invalid credentials' };
+  } catch (error) {
+    console.error('Admin login error:', error);
+    return { success: false, error: 'Login failed' };
   }
-  
-  return { success: false, error: 'Invalid credentials' };
 }
 
 export async function adminLogout() {

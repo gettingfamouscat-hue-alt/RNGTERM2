@@ -30,7 +30,7 @@ A polished, terminal-inspired daily random number game where players roll once p
 - **Framework**: Next.js 16 (App Router)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS with custom terminal/neon aesthetic
-- **Database**: SQLite via Prisma ORM
+- **Database**: PostgreSQL (Neon) via Prisma ORM with serverless adapter
 - **Authentication**: Iron Session (secure httpOnly cookies)
 - **RNG**: Node.js crypto.randomInt (cryptographically secure)
 
